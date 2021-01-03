@@ -4,6 +4,9 @@
   "description": "RSS aggregator",
   "main": "./src/index.js",
   "type": "module",
+  "engine": {
+    "node": "14"
+  },
   "scripts": {
     "test": "echo \"Error: no test specified\" && exit 1"
   },
@@ -27,11 +30,16 @@
   },
   "homepage": "https://github.com/Ray-Garraty/frontend-project-lvl3#readme",
   "devDependencies": {
+    "@babel/core": "^7.12.10",
+    "autoprefixer": "^10.1.0",
+    "babel-loader": "^8.2.2",
     "css-loader": "^5.0.1",
     "eslint": "^7.16.0",
     "eslint-config-airbnb-base": "^14.2.1",
     "eslint-plugin-import": "^2.22.1",
     "html-webpack-plugin": "^4.5.0",
+    "jquery": "^3.5.1",
+    "popper.js": "^1.16.1",
     "postcss-loader": "^4.1.0",
     "sass-loader": "^10.1.0",
     "style-loader": "^2.0.0",
@@ -39,7 +47,6 @@
     "webpack-cli": "^4.3.0"
   },
   "dependencies": {
-    "autoprefixer": "^10.1.0",
     "bootstrap": "^4.5.3"
   }
 }
