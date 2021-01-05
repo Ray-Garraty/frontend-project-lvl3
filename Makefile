@@ -1,6 +1,3 @@
-develop:
-	npx webpack serve
-
 install:
 	npm install
 
@@ -10,6 +7,10 @@ publish:
 build:
 	rm -rf dist
 	NODE_ENV=production npx webpack
+
+develop:
+	rm -rf dist
+	NODE_ENV=development npx webpack
 
 lint:
 	npx eslint .

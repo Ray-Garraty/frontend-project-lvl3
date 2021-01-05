@@ -7,9 +7,6 @@ const stringIsValidUrl = (string) => {
   return schema.isValid(string);
 };
 
-/* функция-предикат urlIsAlreadyLoaded - принимает строку и состояние.
-Преобразует строку в Url и проверяет, есть ли такой Url в списке RSS-фидов,
-хранящихся в состоянии */
 const urlIsAlreadyLoaded = (string, state) => {
   const url = new URL(string);
   return state.feeds.includes(url);

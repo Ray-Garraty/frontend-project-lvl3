@@ -1,5 +1,9 @@
 import 'bootstrap';
+import './app.scss';
 import render from './view.js';
-import { watchedState } from './model.js';
+import controller from './controller.js';
+import generateInitialState from './model.js';
 
-render(watchedState);
+const watchedState = generateInitialState();
+// render(watchedState);
+controller(watchedState);

@@ -8,6 +8,7 @@
     "node": "14"
   },
   "scripts": {
+    "build": "webpack",
     "test": "echo \"Error: no test specified\" && exit 1"
   },
   "repository": {
@@ -39,6 +40,7 @@
     "eslint-plugin-import": "^2.22.1",
     "html-webpack-plugin": "^4.5.0",
     "jquery": "^3.5.1",
+    "node-sass": "^5.0.0",
     "popper.js": "^1.16.1",
     "postcss-loader": "^4.1.0",
     "sass-loader": "^10.1.0",
@@ -51,7 +53,7 @@
     "bootstrap": "^4.5.3",
     "lodash": "^4.17.20",
     "on-change": "^2.2.1",
-    "yup": "^0.32.8",
-    "xml2js": "^0.4.23"
+    "xml2js": "^0.4.23",
+    "yup": "^0.32.8"
   }
 }
