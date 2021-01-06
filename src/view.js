@@ -1,3 +1,5 @@
+import _ from 'lodash';
+
 const addPreviewButtonHandler = (buttonElement, post) => {
   buttonElement.addEventListener('click', () => {
     const titleElement = document.querySelector('h5.modal-title');
@@ -10,27 +12,40 @@ const addPreviewButtonHandler = (buttonElement, post) => {
 };
 
 export default (state) => {
-  // console.log(state);
+  const feedbackField = document.querySelector('div.feedback');
+  feedbackField.className = 'feedback';
+  const inputField = document.querySelector('input');
+  inputField.classList.remove('is-invalid');
   if (!state.inputForm.isValid) {
-    if (document.querySelector('input')) {
-      const inputField = document.querySelector('input');
-      inputField.classList.add('is-invalid');
-      const errorField = document.querySelector('div.feedback');
-      errorField.classList.add('text-danger');
-      errorField.textContent = state.inputForm.error;
-    }
-  } else {
+    inputField.classList.add('is-invalid');
+    feedbackField.classList.add('text-danger');
+    feedbackField.textContent = state.inputForm.error;
+  } else if (_.isEmpty(state.inputForm.error)) {
     const feedsContainer = document.querySelector('div.feeds');
     const postsContainer = document.querySelector('div.posts');
-    const feedsHeader = document.createElement('h2');
-    feedsHeader.textContent = 'Feeds';
-    feedsContainer.appendChild(feedsHeader);
-    const postsHeader = document.createElement('h2');
-    postsHeader.textContent = 'Posts';
-    postsContainer.appendChild(postsHeader);
-    const feedsList = document.createElement('ul');
-    feedsList.classList.add('list-group', 'mb-5');
-    feedsContainer.appendChild(feedsList);
+    if (state.feeds.length < 2) {
+      const feedsHeader = document.createElement('h2');
+      feedsHeader.textContent = 'Feeds';
+      feedsContainer.appendChild(feedsHeader);
+      const postsHeader = document.createElement('h2');
+      postsHeader.textContent = 'Posts';
+      postsContainer.appendChild(postsHeader);
+      const feedsList = document.createElement('ul');
+      feedsList.classList.add('list-group', 'mb-5');
+      feedsContainer.appendChild(feedsList);
+      const postsList = document.createElement('ul');
+      postsList.classList.add('list-group');
+      postsContainer.appendChild(postsList);
+    }
+    const feedsList = document.querySelector('ul.list-group.mb-5');
+    const postsList = document.querySelectorAll('ul.list-group')[1];
+    // очищаем старые фиды и посты
+    const uls = document.querySelectorAll('ul.list-group');
+    uls.forEach((ul) => {
+      while (ul.firstChild) {
+        ul.firstChild.remove();
+      }
+    });
     state.feeds.forEach((feed) => {
       const item = document.createElement('li');
       item.classList.add('list-group-item');
@@ -42,11 +57,7 @@ export default (state) => {
       item.appendChild(description);
       feedsList.appendChild(item);
     });
-    const postsList = document.createElement('ul');
-    postsList.classList.add('list-group');
-    postsContainer.appendChild(postsList);
-    const [posts] = state.posts;
-    posts.forEach((post) => {
+    state.posts.forEach((post) => {
       const item = document.createElement('li');
       item.classList.add('list-group-item', 'd-flex', 'justify-content-between', 'align-items-start');
       postsList.appendChild(item);
@@ -69,5 +80,12 @@ export default (state) => {
       item.appendChild(button);
       postsList.appendChild(item);
     });
+    feedbackField.classList.add('text-success');
+    feedbackField.textContent = 'Rss has been loaded';
+    const formElement = document.querySelector('form');
+    formElement.reset();
+  } else {
+    feedbackField.classList.add('text-danger');
+    feedbackField.textContent = state.inputForm.error;
   }
 };

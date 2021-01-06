@@ -22,26 +22,31 @@ export default () => {
     }
     if (path === 'inputForm.isValid') {
       if (!value) {
-      // отрисовываем ошибки
         render(state);
       } else {
-        // запрашиваем rss-файл, парсим его и отрисовываем
         axios
           .get(`https://api.allorigins.win/get?url=${encodeURIComponent(state.inputForm.content)}`)
           .then((response) => {
-            const { feed, posts } = parseRssFeed(response.data.contents);
+            const parsedData = parseRssFeed(response.data.contents);
+            const { feed, posts } = parsedData;
             if (isEmpty(feed)) {
               onChange.target(state).inputForm.error = "This source doesn't contain valid rss";
-              state.inputForm.isValid(false);
-            } else {
-              onChange.target(state).feeds = [...state.feeds, feed];
-              onChange.target(state).posts = [...state.posts, posts];
-              state.currentState = 'processed';
+              onChange.target(state).currentState = 'error';
               render(state);
+            } else {
+              feed.url = state.inputForm.content;
+              onChange.target(state).inputForm.content = '';
+              onChange.target(state).feeds = [feed, ...state.feeds];
+              onChange.target(state).posts = [...posts, ...state.posts];
+              onChange.target(state).currentState = 'processed';
+              render(state);
+              onChange.target(state).inputForm.isValid = false;
             }
           })
-          .catch(() => {
-            state.inputForm.error = 'Network Error';
+          .catch((error) => {
+            console.error(error);
+            onChange.target(state).inputForm.error = 'Network Error';
+            render(state);
           });
       }
     }

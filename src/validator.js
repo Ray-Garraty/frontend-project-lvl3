@@ -1,4 +1,5 @@
 import * as yup from 'yup';
+import _ from 'lodash';
 
 /* асинхронная функция stringIsValidUrl - принимает строку
 и при помощи библиотеки yup проверяет, является ли она валидным url-адресом */
@@ -7,9 +8,7 @@ const stringIsValidUrl = (string) => {
   return schema.isValid(string);
 };
 
-const urlIsAlreadyLoaded = (string, state) => {
-  const url = new URL(string);
-  return state.feeds.includes(url);
-};
+const isUrlAlreadyLoaded = (urlToVerify, state) => !_.isEmpty(state.feeds
+  .filter((feed) => feed.url === urlToVerify));
 
-export { stringIsValidUrl, urlIsAlreadyLoaded };
+export { stringIsValidUrl, isUrlAlreadyLoaded };

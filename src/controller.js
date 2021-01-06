@@ -1,5 +1,5 @@
 import onChange from 'on-change';
-import { stringIsValidUrl, urlIsAlreadyLoaded } from './validator.js';
+import { stringIsValidUrl, isUrlAlreadyLoaded } from './validator.js';
 
 export default (state) => {
   const button = document.querySelector('button[type="submit"]');
@@ -11,15 +11,14 @@ export default (state) => {
       stringIsValidUrl(userString)
         .then((isValid) => {
           if (userString && isValid) {
-            if (urlIsAlreadyLoaded(userString, state)) {
+            if (isUrlAlreadyLoaded(userString, state)) {
+              onChange.target(state).inputForm.isValid = false;
               state.inputForm.error = 'Rss already exists';
             } else {
               onChange.target(state).inputForm.error = '';
               onChange.target(state).inputForm.content = userString;
               onChange.target(state).currentState = 'sending';
               state.inputForm.isValid = true;
-              const formElement = document.querySelector('form');
-              formElement.reset();
             }
           } else {
             onChange.target(state).inputForm.isValid = false;
