@@ -33,6 +33,7 @@ export default (data) => {
   return { feed, posts };
 };
 
+// странный этот DOMParser, и выдаёт очень странный результат, я не смог разобраться в его структуре
 /* axios.get('http://lorem-rss.herokuapp.com/feed')
   .then((response) => {
     const domparser = new DOMParser();

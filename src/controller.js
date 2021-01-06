@@ -13,7 +13,7 @@ export default (state) => {
           if (userString && isValid) {
             if (isUrlAlreadyLoaded(userString, state)) {
               onChange.target(state).inputForm.isValid = false;
-              state.inputForm.error = 'Rss already exists';
+              state.inputForm.error = 'rss_duplicate';
             } else {
               onChange.target(state).inputForm.error = '';
               onChange.target(state).inputForm.content = userString;
@@ -23,7 +23,7 @@ export default (state) => {
           } else {
             onChange.target(state).inputForm.isValid = false;
             onChange.target(state).currentState = 'error';
-            state.inputForm.error = 'Must be valid url';
+            state.inputForm.error = 'url_invalid';
           }
         });
     };

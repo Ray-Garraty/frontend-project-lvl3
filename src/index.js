@@ -1,7 +1,15 @@
 import 'bootstrap';
 import './app.scss';
+import i18next from 'i18next';
+import { en, ru } from './translations.js';
 import controller from './controller.js';
 import generateInitialState from './model.js';
 
-const watchedState = generateInitialState();
-controller(watchedState);
+i18next.init({
+  lng: 'ru',
+  debug: true,
+  resources: { en, ru },
+}).then(() => {
+  const watchedState = generateInitialState();
+  controller(watchedState);
+});

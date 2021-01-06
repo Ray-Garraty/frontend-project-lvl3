@@ -30,7 +30,7 @@ export default () => {
             const parsedData = parseRssFeed(response.data.contents);
             const { feed, posts } = parsedData;
             if (isEmpty(feed)) {
-              onChange.target(state).inputForm.error = "This source doesn't contain valid rss";
+              onChange.target(state).inputForm.error = 'rss_invalid';
               onChange.target(state).currentState = 'error';
               render(state);
             } else {
@@ -45,7 +45,7 @@ export default () => {
           })
           .catch((error) => {
             console.error(error);
-            onChange.target(state).inputForm.error = 'Network Error';
+            onChange.target(state).inputForm.error = 'network_error';
             render(state);
           });
       }
