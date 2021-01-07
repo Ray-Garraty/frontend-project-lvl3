@@ -1,3 +1,4 @@
+/* eslint-disable no-param-reassign */
 import _ from 'lodash';
 import i18next from 'i18next';
 
@@ -29,10 +30,18 @@ export default (state) => {
   feedbackField.className = 'feedback';
   const inputField = document.querySelector('input');
   inputField.classList.remove('is-invalid');
+  const addButton = document.querySelector('button[type="submit"]');
+  if (state.currentState === 'sending') {
+    addButton.disabled = true;
+  } else {
+    addButton.disabled = false;
+  }
   if (!state.inputForm.isValid) {
     inputField.classList.add('is-invalid');
     feedbackField.classList.add('text-danger');
-    feedbackField.textContent = i18next.t(state.inputForm.error);
+    if (state.inputForm.error) {
+      feedbackField.textContent = i18next.t(state.inputForm.error);
+    }
   } else if (_.isEmpty(state.inputForm.error)) {
     const feedsContainer = document.querySelector('div.feeds');
     const postsContainer = document.querySelector('div.posts');

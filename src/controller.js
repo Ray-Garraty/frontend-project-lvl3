@@ -1,3 +1,4 @@
+/* eslint-disable no-param-reassign */
 import onChange from 'on-change';
 import { stringIsValidUrl, isUrlAlreadyLoaded } from './validator.js';
 
@@ -17,7 +18,7 @@ export default (state) => {
             } else {
               onChange.target(state).inputForm.error = '';
               onChange.target(state).inputForm.content = userString;
-              onChange.target(state).currentState = 'sending';
+              state.currentState = 'sending';
               state.inputForm.isValid = true;
             }
           } else {
@@ -30,21 +31,3 @@ export default (state) => {
     addButton.onclick = handleAddClick;
   }
 };
-
-/* const addPreviewButtonClickHandler = (button, state) => {
-  const handlePreviewButtonClick = (e) => {
-    const postId = Number(e.target.previousSibling.getAttribute('data-id'));
-    state.viewedPostsIds = postId;
-  };
-  button.addEventListener('click', handlePreviewButtonClick);
-};
-
-const addPostLinkClickHandler = (link, state) => {
-  const handleLinkClick = (e) => {
-    const postId = Number(e.target.getAttribute('data-id'));
-    state.viewedPostsIds = postId;
-  };
-  link.onclick = handleLinkClick;
-};
-export { addPreviewButtonClickHandler, addPostLinkClickHandler };
-*/

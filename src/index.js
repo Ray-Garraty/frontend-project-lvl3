@@ -14,5 +14,5 @@ i18next.init({
   const watchedState = generateInitialState();
   controller(watchedState);
   const interval = 5000;
-  // setTimeout(updateRssFeedsContinuously, interval, watchedState, interval);
+  setTimeout(updateRssFeedsContinuously, interval, watchedState, interval);
 });
