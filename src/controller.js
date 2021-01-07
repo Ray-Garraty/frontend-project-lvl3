@@ -2,10 +2,10 @@ import onChange from 'on-change';
 import { stringIsValidUrl, isUrlAlreadyLoaded } from './validator.js';
 
 export default (state) => {
-  const button = document.querySelector('button[type="submit"]');
-  if (button) {
+  const addButton = document.querySelector('button[type="submit"]');
+  if (addButton) {
     const inputForm = document.querySelector('input');
-    const handleClick = (e) => {
+    const handleAddClick = (e) => {
       e.preventDefault();
       const userString = inputForm.value;
       stringIsValidUrl(userString)
@@ -27,6 +27,24 @@ export default (state) => {
           }
         });
     };
-    button.onclick = handleClick;
+    addButton.onclick = handleAddClick;
   }
 };
+
+/* const addPreviewButtonClickHandler = (button, state) => {
+  const handlePreviewButtonClick = (e) => {
+    const postId = Number(e.target.previousSibling.getAttribute('data-id'));
+    state.viewedPostsIds = postId;
+  };
+  button.addEventListener('click', handlePreviewButtonClick);
+};
+
+const addPostLinkClickHandler = (link, state) => {
+  const handleLinkClick = (e) => {
+    const postId = Number(e.target.getAttribute('data-id'));
+    state.viewedPostsIds = postId;
+  };
+  link.onclick = handleLinkClick;
+};
+export { addPreviewButtonClickHandler, addPostLinkClickHandler };
+*/

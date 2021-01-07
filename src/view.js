@@ -1,14 +1,26 @@
 import _ from 'lodash';
 import i18next from 'i18next';
 
-const addPreviewButtonHandler = (buttonElement, post) => {
-  buttonElement.addEventListener('click', () => {
+const addPreviewButtonClickHandler = (buttonElement, post) => {
+  buttonElement.addEventListener('click', (e) => {
     const titleElement = document.querySelector('h5.modal-title');
     titleElement.textContent = post.title;
     const bodyElement = document.querySelector('div.modal-body');
     bodyElement.textContent = post.description;
     const aElement = document.querySelector('a.full-article');
     aElement.setAttribute('href', post.link);
+    post.wasOpened = true;
+    const postLink = e.target.previousSibling;
+    postLink.classList.remove('font-weight-bold');
+    postLink.classList.add('font-weight-normal');
+  });
+};
+
+const addPostLinkClickHandler = (linkElement, post) => {
+  linkElement.addEventListener('click', () => {
+    post.wasOpened = true;
+    linkElement.classList.remove('font-weight-bold');
+    linkElement.classList.add('font-weight-normal');
   });
 };
 
@@ -63,12 +75,13 @@ export default (state) => {
       item.classList.add('list-group-item', 'd-flex', 'justify-content-between', 'align-items-start');
       postsList.appendChild(item);
       const link = document.createElement('a');
-      link.className = 'font-weight-bold';
+      link.className = post.wasOpened ? 'font-weight-normal' : 'font-weight-bold';
       link.setAttribute('href', post.link);
       link.setAttribute('data-id', post.id);
       link.setAttribute('target', '_blank');
       link.setAttribute('rel', 'noopener noreferrer');
       link.textContent = post.title;
+      addPostLinkClickHandler(link, post);
       item.appendChild(link);
       const button = document.createElement('button');
       button.classList.add('btn', 'btn-primary', 'btn-sm');
@@ -77,7 +90,7 @@ export default (state) => {
       button.setAttribute('data-toggle', 'modal');
       button.setAttribute('data-target', '#modal');
       button.textContent = i18next.t('preview');
-      addPreviewButtonHandler(button, post);
+      addPreviewButtonClickHandler(button, post);
       item.appendChild(button);
       postsList.appendChild(item);
     });

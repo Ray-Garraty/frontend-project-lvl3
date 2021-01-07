@@ -4,9 +4,19 @@ import { isEmpty } from 'lodash';
 import render from './view.js';
 import parseRssFeed from './parser.js';
 
+export const proxies = {
+  none: '', // выдаёт ошибку: "Cross-Origin Request Blocked"
+  allorigins: 'https://api.allorigins.win/get?url=', // выдаёт не самую новую версию rss-потока
+  heroku: 'https://cors-anywhere.herokuapp.com/', // выдаёт ошибку "XML Parsing Error: syntax error"
+  htmldriven: 'https://cors-proxy.htmldriven.com/?url=', // выдаёт ошибку: "Cross-Origin Request Blocked: The Same Origin Policy disallows reading the remote resource at https://cors-proxy.htmldriven.com/?url=https%3A%2F%2Florem-rss.herokuapp.com%2Ffeed. (Reason: CORS header ‘Access-Control-Allow-Origin’ missing)"
+  thingproxy: 'https://thingproxy.freeboard.io/fetch/', // выдаёт ошибку "Cross-Origin Request Blocked: The Same Origin Policy disallows reading the remote resource at https://thingproxy.freeboard.io/fetch/https%3A%2F%2Florem-rss.herokuapp.com%2Ffeed. (Reason: CORS header ‘Access-Control-Allow-Origin’ missing)"
+  whateverorigin: 'http://www.whateverorigin.org/get?url=', // выдаёт ошибку "Cross-Origin Request Blocked: The Same Origin Policy disallows reading the remote resource at http://www.whateverorigin.org/get?url=https%3A%2F%2Florem-rss.herokuapp.com%2Ffeed. (Reason: CORS header ‘Access-Control-Allow-Origin’ missing)"
+  alloworigin: 'http://alloworigin.com/get?url=', // выдаёт ошибку "Cross-Origin Request Blocked: The Same Origin Policy disallows reading the remote resource at http://www.whateverorigin.org/get?url=https%3A%2F%2Florem-rss.herokuapp.com%2Ffeed. (Reason: CORS header ‘Access-Control-Allow-Origin’ missing)"
+  yacdn: 'https://yacdn.org/serve/', // запрос отправляет, но ответа нет... :-(
+};
+
 export default () => {
   const state = {
-    // текущие состояния: idle, sending, processed, error
     currentState: 'idle',
     inputForm: {
       isValid: false,
@@ -15,6 +25,7 @@ export default () => {
     },
     feeds: [],
     posts: [],
+    viewedPostsIds: [],
   };
   const watchedState = onChange(state, (path, value) => {
     if (path === 'inputForm.error') {
@@ -25,7 +36,7 @@ export default () => {
         render(state);
       } else {
         axios
-          .get(`https://api.allorigins.win/get?url=${encodeURIComponent(state.inputForm.content)}`)
+          .get(`${proxies.allorigins}${encodeURIComponent(state.inputForm.content)}`)
           .then((response) => {
             const parsedData = parseRssFeed(response.data.contents);
             const { feed, posts } = parsedData;
