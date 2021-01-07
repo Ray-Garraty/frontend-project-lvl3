@@ -1,5 +1,5 @@
 import 'bootstrap';
-import './app.scss';
+import './styles/app.scss';
 import i18next from 'i18next';
 import { en, ru } from './translations.js';
 import controller from './controller.js';
