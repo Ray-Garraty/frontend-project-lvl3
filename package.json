@@ -8,8 +8,7 @@
     "node": "14"
   },
   "jest": {
-    "verbose": true,
-    "transform": {}
+    "scriptPreprocessor": "<rootDir>/jest-script-preprocessor"
   },
   "scripts": {
     "build": "webpack",
@@ -51,6 +50,7 @@
   },
   "dependencies": {
     "axios": "^0.21.1",
+    "babel-jest": "^26.6.3",
     "bootstrap": "^4.5.3",
     "html-webpack-plugin": "^4.5.1",
     "i18next": "^19.8.4",
