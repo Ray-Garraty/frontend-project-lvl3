@@ -8,7 +8,7 @@
     "node": "14"
   },
   "jest": {
-    "scriptPreprocessor": "<rootDir>/jest-script-preprocessor"
+    "scriptPreprocessor": "<rootDir>/src/jest-script-preprocessor"
   },
   "scripts": {
     "build": "webpack",
