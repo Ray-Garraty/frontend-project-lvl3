@@ -7,6 +7,10 @@
   "engine": {
     "node": "14"
   },
+  "jest": {
+    "verbose": true,
+    "transformIgnorePatterns": ["<rootDir>/node_modules/"]
+  },
   "scripts": {
     "build": "webpack",
     "test": "echo \"Error: no test specified\" && exit 1"
