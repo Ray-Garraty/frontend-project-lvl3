@@ -9,7 +9,7 @@
   },
   "jest": {
     "verbose": true,
-    "transformIgnorePatterns": ["<rootDir>/node_modules/"]
+    "transform": {}
   },
   "scripts": {
     "build": "webpack",
