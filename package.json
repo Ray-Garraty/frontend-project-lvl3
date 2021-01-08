@@ -7,9 +7,6 @@
   "engine": {
     "node": "14"
   },
-  "jest": {
-    "scriptPreprocessor": "<rootDir>/src/jest-script-preprocessor"
-  },
   "scripts": {
     "build": "webpack",
     "test": "echo \"Error: no test specified\" && exit 1"
