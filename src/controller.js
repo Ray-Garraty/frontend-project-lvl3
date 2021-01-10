@@ -8,6 +8,7 @@ export default (state) => {
     const inputForm = document.querySelector('input');
     const handleAddClick = (e) => {
       e.preventDefault();
+      console.log('Click!');
       const userString = inputForm.value;
       stringIsValidUrl(userString)
         .then((isValid) => {
