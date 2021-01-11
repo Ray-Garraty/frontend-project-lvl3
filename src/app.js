@@ -7,23 +7,27 @@ import parseRssFeed from './parser.js';
 import { stringIsValidUrl, isUrlAlreadyLoaded } from './validator.js';
 
 export default () => {
-  const addLinkClickHandler = (linkElement, posts, state) => {
-    linkElement.addEventListener('click', (e) => {
-      const id = e.target.getAttribute('data-id');
-      const viewedPost = posts.filter((post) => post.id === id);
-      viewedPost.wasOpened = true;
-      state.viewedPostsIds.push(id);
+  const addLinksClickHandlers = (state) => {
+    const links = document.querySelectorAll('li > a');
+    links.forEach((link) => {
+      link.addEventListener('click', (e) => {
+        const id = e.target.getAttribute('data-id');
+        const [post] = state.feeds.flatMap((feed) => feed.items.filter((item) => item.id === id));
+        post.wasOpened = true;
+      });
     });
   };
 
-  const addPreviewButtonClickHandler = (buttonElement, posts, state) => {
-    buttonElement.addEventListener('click', (e) => {
-      const id = e.target.previousSibling.getAttribute('data-id');
-      const viewedPost = posts.filter((post) => post.id === id);
-      viewedPost.wasOpened = true;
-      state.viewedPostsIds.push(id);
-      // eslint-disable-next-line no-param-reassign
-      state.currentPreviewPost = viewedPost;
+  const addPreviewButtonsClickHandlers = (posts, state) => {
+    const previewButtons = document.querySelectorAll('li > button');
+    previewButtons.forEach((button) => {
+      button.addEventListener('click', (e) => {
+        const id = e.target.getAttribute('data-id');
+        const [post] = state.feeds.flatMap((feed) => feed.items.filter((item) => item.id === id));
+        post.wasOpened = true;
+        // eslint-disable-next-line no-param-reassign
+        state.currentPreviewPost = post;
+      });
     });
   };
 
@@ -44,7 +48,6 @@ export default () => {
       inputField.classList.add('is-invalid');
     }
     const feedbackField = document.querySelector('div.feedback');
-    console.log(error, message);
     feedbackField.textContent = i18next.t(error || message);
     if (message === 'rss_loaded') {
       feedbackField.classList.remove('text-danger');
@@ -94,7 +97,7 @@ export default () => {
     });
   };
 
-  const renderPosts = (posts, state) => {
+  const renderPosts = (posts) => {
     const postsContainer = document.querySelector('div.posts');
     const postsHeader = document.querySelector('div.posts > h2');
     if (!postsHeader) {
@@ -116,7 +119,6 @@ export default () => {
       link.setAttribute('target', '_blank');
       link.setAttribute('rel', 'noopener noreferrer');
       link.textContent = post.title;
-      addLinkClickHandler(link, posts, state);
       item.appendChild(link);
       const button = document.createElement('button');
       button.classList.add('btn', 'btn-primary', 'btn-sm');
@@ -125,19 +127,19 @@ export default () => {
       button.setAttribute('data-toggle', 'modal');
       button.setAttribute('data-target', '#modal');
       button.textContent = i18next.t('preview');
-      addPreviewButtonClickHandler(button, posts, state);
       item.appendChild(button);
       postsList.appendChild(item);
     });
   };
 
-  const renderViewedPosts = (ids) => {
-    const aElements = document.querySelectorAll('a');
-    const viewedPosts = (Array.from(aElements))
-      .filter((element) => ids.include(element.getAttribute('data-id')));
-    viewedPosts.forEach((post) => {
-      post.classList.remove('font-weight-bold');
-      post.classList.add('font-weight-normal');
+  const renderViewedPosts = (posts) => {
+    const viewedPostsIds = posts.filter((post) => post.wasOpened).map((post) => post.id);
+    const aElements = document.querySelectorAll('li > a');
+    aElements.forEach((element) => {
+      if (viewedPostsIds.includes(element.getAttribute('data-id'))) {
+        element.classList.remove('font-weight-bold');
+        element.classList.add('font-weight-normal');
+      }
     });
   };
 
@@ -150,11 +152,11 @@ export default () => {
     },
     message: '',
     feeds: [],
-    viewedPostsIds: [],
     currentPreviewPost: '',
   };
 
   const watchedState = onChange(initialState, (path, value) => {
+    const posts = initialState.feeds.flatMap((feed) => feed.items);
     if (path === 'currentState') {
       switch (value) {
         case 'invalidInput':
@@ -179,11 +181,12 @@ export default () => {
     }
     if (path === 'feeds') {
       renderFeeds(initialState.feeds);
-      const posts = initialState.feeds.flatMap((feed) => feed.items);
-      renderPosts(posts, initialState);
+      renderPosts(posts);
+      addLinksClickHandlers(watchedState);
+      addPreviewButtonsClickHandlers(posts, watchedState);
     }
-    if (path === 'viewedPostsIds') {
-      renderViewedPosts(initialState.viewedPostsIds);
+    if (path.endsWith('wasOpened')) {
+      renderViewedPosts(posts);
     }
     if (path === 'currentPreviewPost') {
       renderPreviewWindow(value);
@@ -252,7 +255,7 @@ export default () => {
       axios
         .get(`${currentProxy}${encodeURIComponent(currentFeed.url)}`)
         .then((response) => {
-          const { error, feed } = parseRssFeed(response.data.contents, _.uniqueId);
+          const { feed } = parseRssFeed(response.data.contents, _.uniqueId);
           currentFeed.items = _.uniqWith([...feed.items, ...currentFeed.items], _.isEqual);
         })
         .catch(() => {
@@ -262,10 +265,10 @@ export default () => {
     });
   };
 
-  const updateRssFeedsContinuously = (state, interval) => {
+  const updateRssFeedsContinuously = (state, timeout) => {
     updateRssFeeds(state);
-    setTimeout(updateRssFeedsContinuously, interval, state, interval);
+    setTimeout(updateRssFeedsContinuously, timeout, state, timeout);
   };
 
-  // setTimeout(updateRssFeedsContinuously, interval, watchedState, interval); 
+  setTimeout(updateRssFeedsContinuously, interval, watchedState, interval);
 };
