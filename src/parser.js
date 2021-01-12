@@ -1,25 +1,25 @@
-export default (data, idGenerator) => {
-  const feed = {};
-  feed.items = [];
+export default (data) => {
   const parser = new DOMParser();
   const parsedData = parser.parseFromString(data, 'application/xml');
   const error = parsedData.querySelector('parsererror');
   if (error) {
-    return { error };
+    throw new Error(error);
   }
-  const channelObject = parsedData.querySelector('channel');
-  feed.title = channelObject.getElementsByTagName('title')[0].textContent;
-  feed.description = channelObject.getElementsByTagName('description')[0].textContent;
-  feed.id = idGenerator();
-  feed.items = Array.from(channelObject.getElementsByTagName('item'))
+  const channelElement = parsedData.querySelector('channel');
+  const titleElement = channelElement.querySelector('title');
+  const title = titleElement.textContent;
+  const descriptionElement = channelElement.querySelector('description');
+  const description = descriptionElement.textContent;
+  const itemElements = channelElement.getElementsByTagName('item');
+  const items = Array.from(itemElements)
     .map((item) => {
-      const result = {
-        title: item.getElementsByTagName('title')[0].textContent,
-        id: idGenerator(),
-        link: item.getElementsByTagName('link')[0].textContent,
-        description: item.getElementsByTagName('description')[0].textContent,
-      };
-      return result;
+      const titleElt = item.querySelector('title');
+      const title = titleElt.textContent;
+      const linkElt = item.querySelector('link');
+      const link = linkElt.textContent;
+      const descriptionElt = item.querySelector('description');
+      const description = descriptionElt.textContent;
+      return { title, link, description };
     });
-  return { error, feed };
+  return { title, description, items };
 };
