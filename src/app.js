@@ -1,3 +1,4 @@
+/* eslint-disable no-param-reassign */
 import _, { uniqueId } from 'lodash';
 import axios from 'axios';
 import parseRssFeed from './parser.js';
@@ -36,11 +37,10 @@ export default (state) => {
               feed.url = state.inputForm.content;
               state.inputForm.content = '';
               feed.id = _.uniqueId();
-              feed.items.forEach((item) => {
+              state.uiState.posts = feed.items.map((item) => {
                 const id = uniqueId();
                 item.id = id;
-                const post = { id, wasOpened: false };
-                state.uiState.posts = { post, ...state.uiState.posts };
+                return { id, wasOpened: false };
               });
               state.feeds = [feed, ...state.feeds];
             } catch (error) {
@@ -66,6 +66,7 @@ export default (state) => {
 
   const updateRssFeedsContinuously = (watchedstate, timeout) => {
     if (!_.isEmpty(watchedstate.feeds)) {
+      // eslint-disable-next-line array-callback-return
       const promises = watchedstate.feeds.map((currentFeed) => {
         retrieveFeed(currentFeed.url, currentProxy)
           .then((response) => {

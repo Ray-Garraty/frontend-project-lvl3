@@ -1,3 +1,4 @@
+import _ from 'lodash';
 import i18next from 'i18next';
 import onChange from 'on-change';
 import addLinkClickHandler from './app.js';
@@ -20,7 +21,7 @@ const renderInputForm = (isFormValid) => {
   }
 };
 
-const renderMainButton = (buttonState) => {
+const toggleMainButton = (buttonState) => {
   const button = document.querySelector('button[type="submit"]');
   if (buttonState === 'buttonIsDisabled') {
     button.disabled = true;
@@ -102,9 +103,6 @@ const renderPosts = (posts) => {
     button.dataset.toggle = 'modal';
     button.dataset.target = '#modal';
     button.textContent = i18next.t('preview');
-    button.addEventListener('click', () => {
-      state.uiState.links[post.id].wasOpened = true;
-    });
     item.appendChild(button);
     postsList.appendChild(item);
   });
@@ -120,14 +118,25 @@ const renderViewedPosts = (ids) => {
   });
 };
 
-const addLinksClickHandlers = (state) => {
+/* эту функцию, создающую обработчики постов, я не могу перенести в app.js,
+т.к. она используется здесь же ниже в watchedState */
+const addPostsClickHandlers = (state) => {
   const linksElements = document.querySelectorAll('li > a');
+  const previewButtonElements = document.querySelectorAll('li > button');
+  const handler = (e) => {
+    const { id } = e.target.dataset;
+    const uiStateOfCurrentLink = _.find(state.uiState.posts, { id });
+    uiStateOfCurrentLink.wasOpened = true;
+  };
   linksElements.forEach((element) => {
+    element.addEventListener('click', handler);
+  });
+  previewButtonElements.forEach((element) => {
+    element.addEventListener('click', handler);
     element.addEventListener('click', (e) => {
-      console.log('Click!');
       const { id } = e.target.dataset;
-      _.find
-      state.uiState.links[id].wasOpened = true;
+      // eslint-disable-next-line no-param-reassign
+      state.uiState.currentPreviewPostId = id;
     });
   });
 };
@@ -142,7 +151,7 @@ const state = {
   message: '',
   feeds: [],
   uiState: {
-    links: {},
+    posts: {},
   },
 };
 
@@ -151,20 +160,23 @@ const watchedState = onChange(state, (path, value) => {
   if (path === 'currentState') {
     switch (value) {
       case 'invalidInput':
-        renderInputForm('invalid');
-        renderMessage(state.inputForm.error, 'failure');
+        renderInputForm('invalid'); // рисует красную рамку
+        renderMessage(state.inputForm.error, 'failure'); // отображает ошибку
         break;
       case 'sending':
-        renderMainButton('buttonIsDisabled');
+        toggleMainButton('buttonIsDisabled');
         break;
+      /* ниже случаи 'invalidRss' и 'failedRequest' объединены вместе,
+      поскольку оба очень похожи по функционалу: в обоих случаях сайт отправляет запрос,
+      и не получает тот ответ, на который рассчитывал */
       case 'invalidRss':
       case 'failedRequest':
-        renderMainButton('buttonIsEnabled');
-        renderMessage(state.message, 'failure');
+        toggleMainButton('buttonIsEnabled');
+        renderMessage(state.message, 'failure'); // отображает ошибку
         break;
       case 'success':
-        renderMainButton('buttonIsEnabled');
-        renderMessage(state.message, 'success');
+        toggleMainButton('buttonIsEnabled');
+        renderMessage(state.message, 'success'); // отображает сообщение об успехе
         break;
       default:
         throw new Error(`Unexpected currentState: ${value}`);
@@ -173,14 +185,19 @@ const watchedState = onChange(state, (path, value) => {
   if (path === 'feeds') {
     renderFeeds(state.feeds);
     renderPosts(posts);
-    
+    addPostsClickHandlers(watchedState);
   }
-  if (path === 'uiState.links') {
-    const ids = posts.filter((post) => post.wasOpened).map((post) => post.id);
-    renderViewedPosts(ids);
+  if (path.startsWith('uiState.posts')) {
+    const idsOfOpenedPosts = state.uiState.posts
+      .filter((post) => post.wasOpened)
+      .map((post) => post.id);
+    renderViewedPosts(idsOfOpenedPosts);
   }
-  if (path === 'currentPreviewPost') {
-    renderPreviewWindow(value);
+  if (path === 'uiState.currentPreviewPostId') {
+    const [currentPreviewPost] = state.feeds
+      .flatMap((feed) => feed.items
+        .filter((item) => item.id === value));
+    renderPreviewWindow(currentPreviewPost);
   }
 });
 
