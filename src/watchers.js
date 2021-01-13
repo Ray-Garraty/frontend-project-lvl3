@@ -1,5 +1,6 @@
 import i18next from 'i18next';
 import onChange from 'on-change';
+import addLinkClickHandler from './app.js';
 
 const renderPreviewWindow = (post) => {
   const titleElement = document.querySelector('h5.modal-title');
@@ -10,30 +11,33 @@ const renderPreviewWindow = (post) => {
   aElement.setAttribute('href', post.link);
 };
 
-const renderInputForm = (isFormValid, error, message) => {
+const renderInputForm = (isFormValid) => {
   const inputField = document.querySelector('input');
   if (isFormValid) {
     inputField.classList.remove('is-invalid');
   } else {
     inputField.classList.add('is-invalid');
   }
+};
+
+const renderMainButton = (buttonState) => {
+  const button = document.querySelector('button[type="submit"]');
+  if (buttonState === 'buttonIsDisabled') {
+    button.disabled = true;
+  } else {
+    button.disabled = false;
+  }
+};
+
+const renderMessage = (message, style) => {
   const feedbackField = document.querySelector('div.feedback');
-  feedbackField.textContent = i18next.t(error || message);
-  if (message === 'rss_loaded') {
+  feedbackField.textContent = i18next.t(message);
+  if (style === 'success') {
     feedbackField.classList.remove('text-danger');
     feedbackField.classList.add('text-success');
   } else {
     feedbackField.classList.remove('text-success');
     feedbackField.classList.add('text-danger');
-  }
-};
-
-const renderFeedLoadingProcess = (isButtonDisabled) => {
-  const button = document.querySelector('button[type="submit"]');
-  if (isButtonDisabled) {
-    button.disabled = true;
-  } else {
-    button.disabled = false;
   }
 };
 
@@ -85,18 +89,22 @@ const renderPosts = (posts) => {
     const link = document.createElement('a');
     link.className = post.wasOpened ? 'font-weight-normal' : 'font-weight-bold';
     link.setAttribute('href', post.link);
-    link.setAttribute('data-id', post.id);
+    link.dataset.id = post.id;
     link.setAttribute('target', '_blank');
     link.setAttribute('rel', 'noopener noreferrer');
     link.textContent = post.title;
+    addLinkClickHandler(link, post);
     item.appendChild(link);
     const button = document.createElement('button');
     button.classList.add('btn', 'btn-primary', 'btn-sm');
     button.setAttribute('type', 'button');
-    button.setAttribute('data-id', post.id);
-    button.setAttribute('data-toggle', 'modal');
-    button.setAttribute('data-target', '#modal');
+    button.dataset.id = post.id;
+    button.dataset.toggle = 'modal';
+    button.dataset.target = '#modal';
     button.textContent = i18next.t('preview');
+    button.addEventListener('click', () => {
+      state.uiState.links[post.id].wasOpened = true;
+    });
     item.appendChild(button);
     postsList.appendChild(item);
   });
@@ -112,7 +120,19 @@ const renderViewedPosts = (ids) => {
   });
 };
 
-const initialState = {
+const addLinksClickHandlers = (state) => {
+  const linksElements = document.querySelectorAll('li > a');
+  linksElements.forEach((element) => {
+    element.addEventListener('click', (e) => {
+      console.log('Click!');
+      const { id } = e.target.dataset;
+      _.find
+      state.uiState.links[id].wasOpened = true;
+    });
+  });
+};
+
+const state = {
   currentState: 'idle',
   inputForm: {
     isValid: false,
@@ -126,37 +146,36 @@ const initialState = {
   },
 };
 
-const watchedState = onChange(initialState, (path, value) => {
-  const posts = initialState.feeds.flatMap((feed) => feed.items);
+const watchedState = onChange(state, (path, value) => {
+  const posts = state.feeds.flatMap((feed) => feed.items);
   if (path === 'currentState') {
     switch (value) {
       case 'invalidInput':
-        renderInputForm(false, initialState.inputForm.error, initialState.message);
+        renderInputForm('invalid');
+        renderMessage(state.inputForm.error, 'failure');
         break;
       case 'sending':
-        renderFeedLoadingProcess(true);
+        renderMainButton('buttonIsDisabled');
         break;
       case 'invalidRss':
       case 'failedRequest':
-        renderFeedLoadingProcess(false);
-        renderInputForm(true, initialState.message);
+        renderMainButton('buttonIsEnabled');
+        renderMessage(state.message, 'failure');
         break;
       case 'success':
-        renderFeedLoadingProcess(false);
-        renderInputForm(true, null, initialState.message);
+        renderMainButton('buttonIsEnabled');
+        renderMessage(state.message, 'success');
         break;
       default:
-        console.log('Unexpected currentState: ', value);
-        break;
+        throw new Error(`Unexpected currentState: ${value}`);
     }
   }
   if (path === 'feeds') {
-    renderFeeds(initialState.feeds);
+    renderFeeds(state.feeds);
     renderPosts(posts);
-    addLinksClickHandlers(watchedState);
-    addPreviewButtonsClickHandlers(posts, watchedState);
+    
   }
-  if (path.endsWith('wasOpened')) {
+  if (path === 'uiState.links') {
     const ids = posts.filter((post) => post.wasOpened).map((post) => post.id);
     renderViewedPosts(ids);
   }
@@ -164,3 +183,5 @@ const watchedState = onChange(initialState, (path, value) => {
     renderPreviewWindow(value);
   }
 });
+
+export default watchedState;

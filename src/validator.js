@@ -6,6 +6,6 @@ import * as yup from 'yup';
 export default (url, urlsList) => {
   const schema1 = yup.string().url();
   schema1.validateSync(url);
-  const schema2 = yup.mixed().oneOf(urlsList);
+  const schema2 = yup.mixed().notOneOf(urlsList);
   return schema2.isValidSync(url);
 };

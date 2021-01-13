@@ -4,25 +4,6 @@ import parseRssFeed from './parser.js';
 import validateString from './validator.js';
 
 export default (state) => {
-  const links = document.querySelectorAll('li > a');
-  links.forEach((link) => {
-    link.addEventListener('click', (e) => {
-      const { id } = e.target.dataset;
-      const [post] = state.feeds.flatMap((feed) => feed.items.filter((item) => item.id === id));
-      post.wasOpened = true;
-    });
-  });
-
-  const previewButtons = document.querySelectorAll('li > button');
-  previewButtons.forEach((button) => {
-    button.addEventListener('click', (e) => {
-      const { id } = e.target.dataset;
-      const [post] = state.feeds.flatMap((feed) => feed.items.filter((item) => item.id === id));
-      post.wasOpened = true;
-      state.currentPreviewPost = post;
-    });
-  });
-
   const proxies = {
     allorigins: 'https://api.allorigins.win/get?url=',
     heroku: 'https://cors-anywhere.herokuapp.com/',
@@ -83,29 +64,30 @@ export default (state) => {
   const addButton = document.querySelector('button[type="submit"]');
   addButton.onclick = handleAddClick;
 
-  const interval = 5000;
-
   const updateRssFeedsContinuously = (watchedstate, timeout) => {
-    const promises = watchedstate.feeds.map((currentFeed) => {
-      retrieveFeed(state.inputForm.content, currentProxy)
-        .then((response) => {
-          const feed = parseRssFeed(response.data.contents);
-          currentFeed.items = _.uniqWith([...feed.items, ...currentFeed.items], _.isEqual);
-          const newItems = currentFeed.items.filter((item) => !item.id);
-          newItems.forEach((item) => {
-            const id = uniqueId();
-            item.id = id;
-            const post = { id, wasOpened: false };
-            state.uiState.posts = { post, ...state.uiState.posts };
+    if (!_.isEmpty(watchedstate.feeds)) {
+      const promises = watchedstate.feeds.map((currentFeed) => {
+        retrieveFeed(currentFeed.url, currentProxy)
+          .then((response) => {
+            const feed = parseRssFeed(response.data.contents);
+            currentFeed.items = _.uniqWith([...feed.items, ...currentFeed.items], _.isEqual);
+            const newItems = currentFeed.items.filter((item) => !item.id);
+            newItems.forEach((item) => {
+              const id = uniqueId();
+              item.id = id;
+              const post = { id, wasOpened: false };
+              state.uiState.posts = { post, ...state.uiState.posts };
+            });
+          })
+          .catch(() => {
+            watchedstate.message = 'network_error';
+            watchedstate.currentState = 'failedRequest';
           });
-        })
-        .catch(() => {
-          watchedstate.message = 'network_error';
-          watchedstate.currentState = 'failedRequest';
-        });
-    });
-    Promise.all(promises)
-      .then(setTimeout(() => updateRssFeedsContinuously(watchedstate, timeout), timeout));
+      });
+      Promise.all(promises)
+        .then(setTimeout(() => updateRssFeedsContinuously(watchedstate, timeout), timeout));
+    }
   };
+  const interval = 5000;
   setTimeout(() => updateRssFeedsContinuously(state, interval), interval);
 };
