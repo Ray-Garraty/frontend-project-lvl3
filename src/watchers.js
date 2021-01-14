@@ -1,64 +1,56 @@
+/* eslint-disable no-param-reassign */
 import _ from 'lodash';
 import i18next from 'i18next';
 import onChange from 'on-change';
 
-export default () => {
-  const renderPreviewWindow = (post) => {
-    const titleElement = document.querySelector('h5.modal-title');
-    titleElement.textContent = post.title;
-    const bodyElement = document.querySelector('div.modal-body');
-    bodyElement.textContent = post.description;
-    const aElement = document.querySelector('a.full-article');
-    aElement.setAttribute('href', post.link);
-  };
-
+export default (pageElements) => {
   const renderInputForm = (isFormValid) => {
-    const inputField = document.querySelector('input');
+    const { inputFieldElement } = pageElements;
     if (isFormValid) {
-      inputField.classList.remove('is-invalid');
+      inputFieldElement.classList.remove('is-invalid');
     } else {
-      inputField.classList.add('is-invalid');
+      inputFieldElement.classList.add('is-invalid');
     }
   };
 
   const toggleMainButton = (buttonState) => {
-    const button = document.querySelector('button[type="submit"]');
+    const { addButtonElement } = pageElements;
     if (buttonState === 'buttonIsDisabled') {
-      button.disabled = true;
+      addButtonElement.disabled = true;
     } else {
-      button.disabled = false;
+      addButtonElement.disabled = false;
     }
   };
 
   const renderMessage = (message, style) => {
-    const feedbackField = document.querySelector('div.feedback');
-    feedbackField.textContent = i18next.t(message);
+    const { feedbackFieldElement } = pageElements;
+    feedbackFieldElement.textContent = i18next.t(message);
     if (style === 'success') {
-      feedbackField.classList.remove('text-danger');
-      feedbackField.classList.add('text-success');
+      feedbackFieldElement.classList.remove('text-danger');
+      feedbackFieldElement.classList.add('text-success');
     } else {
-      feedbackField.classList.remove('text-success');
-      feedbackField.classList.add('text-danger');
+      feedbackFieldElement.classList.remove('text-success');
+      feedbackFieldElement.classList.add('text-danger');
     }
   };
 
   const renderFeeds = (feeds) => {
-    const feedsContainer = document.querySelector('div.feeds');
+    const { feedsContainerElement } = pageElements;
     if (feeds.length === 1) {
       const feedsHeader = document.createElement('h2');
       feedsHeader.textContent = i18next.t('feeds_header');
-      feedsContainer.appendChild(feedsHeader);
-      const feedsList = document.createElement('ul');
-      feedsList.classList.add('list-group', 'mb-5');
-      feedsContainer.appendChild(feedsList);
+      feedsContainerElement.appendChild(feedsHeader);
+      const feedsListElement = document.createElement('ul');
+      feedsListElement.classList.add('list-group', 'mb-5');
+      feedsContainerElement.appendChild(feedsListElement);
     }
-    const feedsList = document.querySelector('ul.list-group.mb-5');
-    const uls = document.querySelectorAll('ul.list-group');
-    uls.forEach((ul) => {
+    const ulElements = document.querySelectorAll('ul.list-group');
+    ulElements.forEach((ul) => {
       while (ul.firstChild) {
         ul.firstChild.remove();
       }
     });
+    const feedsListElement = document.querySelector('ul.list-group.mb-5');
     feeds.forEach((feed) => {
       const item = document.createElement('li');
       item.classList.add('list-group-item');
@@ -68,21 +60,21 @@ export default () => {
       const description = document.createElement('p');
       description.textContent = feed.description;
       item.appendChild(description);
-      feedsList.appendChild(item);
+      feedsListElement.appendChild(item);
     });
   };
 
   const renderPosts = (posts) => {
-    const postsContainer = document.querySelector('div.posts');
+    const { postsContainerElement } = pageElements;
     const postsHeader = document.querySelector('div.posts > h2');
     if (!postsHeader) {
       const newPostsHeader = document.createElement('h2');
       newPostsHeader.textContent = i18next.t('posts_header');
-      postsContainer.appendChild(newPostsHeader);
+      postsContainerElement.appendChild(newPostsHeader);
     }
     const postsList = document.createElement('ul');
     postsList.classList.add('list-group');
-    postsContainer.appendChild(postsList);
+    postsContainerElement.appendChild(postsList);
     posts.forEach((post) => {
       const item = document.createElement('li');
       item.classList.add('list-group-item', 'd-flex', 'justify-content-between', 'align-items-start');
@@ -105,6 +97,15 @@ export default () => {
       item.appendChild(button);
       postsList.appendChild(item);
     });
+  };
+
+  const renderPreviewWindow = (post) => {
+    const titleElement = document.querySelector('h5.modal-title');
+    titleElement.textContent = post.title;
+    const bodyElement = document.querySelector('div.modal-body');
+    bodyElement.textContent = post.description;
+    const aElement = document.querySelector('a.full-article');
+    aElement.setAttribute('href', post.link);
   };
 
   const renderViewedPosts = (ids) => {

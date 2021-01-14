@@ -6,7 +6,21 @@ import validateString from './validator.js';
 import generateState from './watchers.js';
 
 export default () => {
-  const state = generateState();
+  const inputFieldElement = document.querySelector('input');
+  const feedbackFieldElement = document.querySelector('div.feedback');
+  const feedsContainerElement = document.querySelector('div.feeds');
+  const addButtonElement = document.querySelector('button[type="submit"]');
+  const postsContainerElement = document.querySelector('div.posts');
+
+  const pageElements = {
+    inputFieldElement,
+    feedbackFieldElement,
+    feedsContainerElement,
+    addButtonElement,
+    postsContainerElement,
+  };
+
+  const state = generateState(pageElements);
 
   const proxies = {
     allorigins: 'https://api.allorigins.win/get?url=',
@@ -64,8 +78,7 @@ export default () => {
       state.currentState = 'invalidInput';
     }
   };
-  const addButton = document.querySelector('button[type="submit"]');
-  addButton.onclick = handleAddClick;
+  addButtonElement.onclick = handleAddClick;
 
   const updateRssFeedsContinuously = (watchedstate, timeout) => {
     if (!_.isEmpty(watchedstate.feeds)) {
