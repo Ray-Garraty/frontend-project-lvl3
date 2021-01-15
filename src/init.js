@@ -5,7 +5,7 @@ import { en, ru } from './translations.js';
 
 export default () => {
   i18next.init({
-    lng: 'ru',
+    lng: 'en',
     debug: true,
     resources: { en, ru },
   }).then(() => app());
