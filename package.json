@@ -2,7 +2,7 @@
   "name": "@hexlet/code",
   "version": "1.0.0",
   "description": "RSS aggregator",
-  "main": "./src/index.js",
+  "main": "./src/init.js",
   "type": "module",
   "engine": {
     "node": "14"
