@@ -1,10 +1,27 @@
 /* eslint-disable no-param-reassign */
-import _, { uniqueId } from 'lodash';
+import _ from 'lodash';
 import axios from 'axios';
 import parseRssFeed from './parser.js';
 import validateString from './validator.js';
+import generateState from './watchers.js';
 
-export default (state) => {
+export default () => {
+  const inputFieldElement = document.querySelector('input');
+  const feedbackFieldElement = document.querySelector('div.feedback');
+  const feedsContainerElement = document.querySelector('div.feeds');
+  const addButtonElement = document.querySelector('button[type="submit"]');
+  const postsContainerElement = document.querySelector('div.posts');
+
+  const pageElements = {
+    inputFieldElement,
+    feedbackFieldElement,
+    feedsContainerElement,
+    addButtonElement,
+    postsContainerElement,
+  };
+
+  const state = generateState(pageElements);
+
   const proxies = {
     allorigins: 'https://api.allorigins.win/get?url=',
     heroku: 'https://cors-anywhere.herokuapp.com/',
@@ -38,7 +55,7 @@ export default (state) => {
               state.inputForm.content = '';
               feed.id = _.uniqueId();
               state.uiState.posts = feed.items.map((item) => {
-                const id = uniqueId();
+                const id = _.uniqueId();
                 item.id = id;
                 return { id, wasOpened: false };
               });
@@ -53,7 +70,7 @@ export default (state) => {
             state.currentState = 'failedRequest';
           });
       } else {
-        state.message = 'rss_duplicate';
+        state.inputForm.error = 'rss_duplicate';
         state.currentState = 'invalidInput';
       }
     } catch (error) {
@@ -61,8 +78,7 @@ export default (state) => {
       state.currentState = 'invalidInput';
     }
   };
-  const addButton = document.querySelector('button[type="submit"]');
-  addButton.onclick = handleAddClick;
+  addButtonElement.onclick = handleAddClick;
 
   const updateRssFeedsContinuously = (watchedstate, timeout) => {
     if (!_.isEmpty(watchedstate.feeds)) {
@@ -74,7 +90,7 @@ export default (state) => {
             currentFeed.items = _.uniqWith([...feed.items, ...currentFeed.items], _.isEqual);
             const newItems = currentFeed.items.filter((item) => !item.id);
             newItems.forEach((item) => {
-              const id = uniqueId();
+              const id = _.uniqueId();
               item.id = id;
               const post = { id, wasOpened: false };
               state.uiState.posts = { post, ...state.uiState.posts };
