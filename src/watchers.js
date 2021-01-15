@@ -13,12 +13,15 @@ export default (pageElements) => {
     }
   };
 
-  const toggleMainButton = (buttonState) => {
+  const toggleFormReadonlyState = (formState) => {
     const { addButtonElement } = pageElements;
-    if (buttonState === 'buttonIsDisabled') {
+    const { inputFieldElement } = pageElements;
+    if (formState === 'readonly') {
       addButtonElement.disabled = true;
+      inputFieldElement.setAttribute('readonly', true);
     } else {
       addButtonElement.disabled = false;
+      inputFieldElement.removeAttribute('readonly');
     }
   };
 
@@ -164,18 +167,18 @@ export default (pageElements) => {
           renderMessage(state.inputForm.error, 'failure'); // отображает ошибку
           break;
         case 'sending':
-          toggleMainButton('buttonIsDisabled');
+          toggleFormReadonlyState('readonly');
           break;
         /* ниже случаи 'invalidRss' и 'failedRequest' объединены вместе,
         поскольку оба очень похожи по функционалу: в обоих случаях сайт отправляет запрос,
         и не получает тот ответ, на который рассчитывал */
         case 'invalidRss':
         case 'failedRequest':
-          toggleMainButton('buttonIsEnabled');
+          toggleFormReadonlyState('default');
           renderMessage(state.message, 'failure'); // отображает ошибку
           break;
         case 'success':
-          toggleMainButton('buttonIsEnabled');
+          toggleFormReadonlyState('default');
           renderMessage(state.message, 'success'); // отображает сообщение об успехе
           break;
         default:

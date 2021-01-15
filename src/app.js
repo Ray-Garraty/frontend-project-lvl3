@@ -61,11 +61,13 @@ export default () => {
               });
               state.feeds = [feed, ...state.feeds];
             } catch (error) {
+              // console.log('1', error);
               state.message = 'rss_invalid';
               state.currentState = 'invalidRss';
             }
           })
           .catch(() => {
+            // console.error('2', error);
             state.message = 'network_error';
             state.currentState = 'failedRequest';
           });
@@ -74,6 +76,7 @@ export default () => {
         state.currentState = 'invalidInput';
       }
     } catch (error) {
+      // console.error('3', error);
       state.inputForm.error = 'url_invalid';
       state.currentState = 'invalidInput';
     }
