@@ -1,9 +1,12 @@
 /* eslint-disable no-param-reassign */
 import _ from 'lodash';
 import axios from 'axios';
+import * as yup from 'yup';
 import parseRssFeed from './parser.js';
-import validateString from './validator.js';
 import generateState from './watchers.js';
+import validateString from './validator.js';
+
+const updateInterval = 5000;
 
 export default () => {
   const inputFieldElement = document.querySelector('input');
@@ -20,7 +23,21 @@ export default () => {
     postsContainerElement,
   };
 
-  const state = generateState(pageElements);
+  const initialState = {
+    currentState: 'idle',
+    error: '',
+    feeds: [],
+    uiState: {
+      inputForm: {
+        isValid: false,
+        content: '',
+        error: '',
+      },
+      posts: {},
+    },
+  };
+  const state = generateState(initialState, pageElements);
+  const schema = yup.string().url();
 
   const proxies = {
     allorigins: 'https://api.allorigins.win/get?url=',
@@ -38,50 +55,65 @@ export default () => {
 
   const handleAddClick = (e) => {
     e.preventDefault();
-    state.message = '';
-    state.inputForm.error = '';
-    state.inputForm.content = inputForm.value;
+    state.error = '';
+    state.uiState.inputForm.error = '';
+    state.uiState.inputForm.isValid = true;
+    state.uiState.inputForm.content = inputForm.value;
     const feedsUrls = state.feeds.flatMap((feed) => feed.url);
     try {
-      if (validateString(state.inputForm.content, feedsUrls)) {
-        state.currentState = 'sending';
-        retrieveFeed(state.inputForm.content, currentProxy)
-          .then((response) => {
-            try {
-              const feed = parseRssFeed(response.data.contents);
-              state.message = 'rss_loaded';
-              state.currentState = 'success';
-              feed.url = state.inputForm.content;
-              state.inputForm.content = '';
-              feed.id = _.uniqueId();
-              state.uiState.posts = feed.items.map((item) => {
+      validateString(state.uiState.inputForm.content, feedsUrls, schema);
+      state.currentState = 'sending';
+      retrieveFeed(state.uiState.inputForm.content, currentProxy)
+        .then((response) => {
+          try {
+            const feed = parseRssFeed(response.data.contents);
+            state.currentState = 'success';
+            feed.url = state.uiState.inputForm.content;
+            state.uiState.inputForm.content = '';
+            feed.id = _.uniqueId();
+            state.uiState.posts = _.flatten([
+              state.uiState.posts,
+              ...feed.items.map((item) => {
                 const id = _.uniqueId();
                 item.id = id;
                 return { id, wasOpened: false };
-              });
-              state.feeds = [feed, ...state.feeds];
-            } catch (error) {
-              // console.log('1', error);
-              state.message = 'rss_invalid';
-              state.currentState = 'invalidRss';
-            }
-          })
-          .catch(() => {
-            // console.error('2', error);
-            state.message = 'network_error';
-            state.currentState = 'failedRequest';
-          });
-      } else {
-        state.inputForm.error = 'rss_duplicate';
-        state.currentState = 'invalidInput';
-      }
+              }),
+            ]);
+            state.feeds = [feed, ...state.feeds];
+          } catch (error) {
+            console.error(error);
+            state.error = 'rss_invalid';
+            state.currentState = 'fail';
+          }
+        })
+        .catch((error) => {
+          console.error(error);
+          state.error = 'network_error';
+          state.currentState = 'fail';
+        });
     } catch (error) {
-      // console.error('3', error);
-      state.inputForm.error = 'url_invalid';
-      state.currentState = 'invalidInput';
+      console.error(error);
+      state.uiState.inputForm.isValid = false;
+      state.uiState.inputForm.error = error.type;
     }
   };
   addButtonElement.onclick = handleAddClick;
+
+  const handlePostClick = (e) => {
+    const tag = e.target.tagName;
+    if (tag === 'A' || tag === 'BUTTON') {
+      const { id } = e.target.dataset;
+      console.log(state.uiState.posts);
+      const uiStateOfCurrentLink = _.find(state.uiState.posts, { id });
+      uiStateOfCurrentLink.wasOpened = true;
+      /* далее отдельное состояние 'uiState.currentPreviewPostId' обязательно
+      необходимо для того, чтобы передать в вотчер id поста, который надо открыть
+      в модальном окне, поскольку это нужно для последующего заполнения
+      модального окна силами функции renderModal */
+      state.uiState.currentPreviewPostId = id;
+    }
+  };
+  postsContainerElement.onclick = handlePostClick;
 
   const updateRssFeedsContinuously = (watchedstate, timeout) => {
     if (!_.isEmpty(watchedstate.feeds)) {
@@ -108,6 +140,5 @@ export default () => {
         .then(setTimeout(() => updateRssFeedsContinuously(watchedstate, timeout), timeout));
     }
   };
-  const interval = 5000;
-  setTimeout(() => updateRssFeedsContinuously(state, interval), interval);
+  // setTimeout(() => updateRssFeedsContinuously(state, updateInterval), updateInterval);
 };

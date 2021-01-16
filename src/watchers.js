@@ -1,9 +1,8 @@
 /* eslint-disable no-param-reassign */
-import _ from 'lodash';
 import i18next from 'i18next';
 import onChange from 'on-change';
 
-export default (pageElements) => {
+export default (state, pageElements) => {
   const renderInputForm = (isFormValid) => {
     const { inputFieldElement } = pageElements;
     if (isFormValid) {
@@ -25,35 +24,33 @@ export default (pageElements) => {
     }
   };
 
-  const renderMessage = (message, style) => {
+  const renderMessage = () => {
     const { feedbackFieldElement } = pageElements;
-    feedbackFieldElement.textContent = i18next.t(message);
-    if (style === 'success') {
-      feedbackFieldElement.classList.remove('text-danger');
-      feedbackFieldElement.classList.add('text-success');
-    } else {
-      feedbackFieldElement.classList.remove('text-success');
-      feedbackFieldElement.classList.add('text-danger');
-    }
+    feedbackFieldElement.textContent = i18next.t('rss_loaded');
+    feedbackFieldElement.classList.remove('text-danger');
+    feedbackFieldElement.classList.add('text-success');
+  };
+
+  const renderError = (error) => {
+    const { feedbackFieldElement } = pageElements;
+    feedbackFieldElement.textContent = i18next.t(error);
+    feedbackFieldElement.classList.remove('text-success');
+    feedbackFieldElement.classList.add('text-danger');
   };
 
   const renderFeeds = (feeds) => {
     const { feedsContainerElement } = pageElements;
-    if (feeds.length === 1) {
+    let [feedsListElement] = feedsContainerElement.getElementsByTagName('ul');
+    if (feedsListElement) {
+      feedsListElement.innerHTML = '';
+    } else {
       const feedsHeader = document.createElement('h2');
       feedsHeader.textContent = i18next.t('feeds_header');
       feedsContainerElement.appendChild(feedsHeader);
-      const feedsListElement = document.createElement('ul');
+      feedsListElement = document.createElement('ul');
       feedsListElement.classList.add('list-group', 'mb-5');
       feedsContainerElement.appendChild(feedsListElement);
     }
-    const ulElements = document.querySelectorAll('ul.list-group');
-    ulElements.forEach((ul) => {
-      while (ul.firstChild) {
-        ul.firstChild.remove();
-      }
-    });
-    const feedsListElement = document.querySelector('ul.list-group.mb-5');
     feeds.forEach((feed) => {
       const item = document.createElement('li');
       item.classList.add('list-group-item');
@@ -69,19 +66,21 @@ export default (pageElements) => {
 
   const renderPosts = (posts) => {
     const { postsContainerElement } = pageElements;
-    const postsHeader = document.querySelector('div.posts > h2');
-    if (!postsHeader) {
-      const newPostsHeader = document.createElement('h2');
-      newPostsHeader.textContent = i18next.t('posts_header');
-      postsContainerElement.appendChild(newPostsHeader);
+    let [postsListElement] = postsContainerElement.getElementsByTagName('ul');
+    if (postsListElement) {
+      postsListElement.innerHTML = '';
+    } else {
+      const postsHeader = document.createElement('h2');
+      postsHeader.textContent = i18next.t('posts_header');
+      postsContainerElement.appendChild(postsHeader);
+      postsListElement = document.createElement('ul');
+      postsListElement.classList.add('list-group');
+      postsContainerElement.appendChild(postsListElement);
     }
-    const postsList = document.createElement('ul');
-    postsList.classList.add('list-group');
-    postsContainerElement.appendChild(postsList);
     posts.forEach((post) => {
       const item = document.createElement('li');
       item.classList.add('list-group-item', 'd-flex', 'justify-content-between', 'align-items-start');
-      postsList.appendChild(item);
+      postsListElement.appendChild(item);
       const link = document.createElement('a');
       link.className = post.wasOpened ? 'font-weight-normal' : 'font-weight-bold';
       link.setAttribute('href', post.link);
@@ -98,11 +97,11 @@ export default (pageElements) => {
       button.dataset.target = '#modal';
       button.textContent = i18next.t('preview');
       item.appendChild(button);
-      postsList.appendChild(item);
+      postsListElement.appendChild(item);
     });
   };
 
-  const renderPreviewWindow = (post) => {
+  const renderModal = (post) => {
     const titleElement = document.querySelector('h5.modal-title');
     titleElement.textContent = post.title;
     const bodyElement = document.querySelector('div.modal-body');
@@ -121,78 +120,38 @@ export default (pageElements) => {
     });
   };
 
-  /* эту функцию, создающую обработчики постов, я не могу перенести в app.js,
-  т.к. она используется здесь же ниже в watchedState */
-  const addPostsClickHandlers = (state) => {
-    const linksElements = document.querySelectorAll('li > a');
-    const previewButtonElements = document.querySelectorAll('li > button');
-    const handler = (e) => {
-      const { id } = e.target.dataset;
-      const uiStateOfCurrentLink = _.find(state.uiState.posts, { id });
-      uiStateOfCurrentLink.wasOpened = true;
-    };
-    linksElements.forEach((element) => {
-      element.addEventListener('click', handler);
-    });
-    previewButtonElements.forEach((element) => {
-      element.addEventListener('click', handler);
-      element.addEventListener('click', (e) => {
-        const { id } = e.target.dataset;
-        // eslint-disable-next-line no-param-reassign
-        state.uiState.currentPreviewPostId = id;
-      });
-    });
-  };
-
-  const state = {
-    currentState: 'idle',
-    inputForm: {
-      isValid: false,
-      content: '',
-      error: '',
-    },
-    message: '',
-    feeds: [],
-    uiState: {
-      posts: {},
-    },
-  };
-
   const watchedState = onChange(state, (path, value) => {
     const posts = state.feeds.flatMap((feed) => feed.items);
     if (path === 'currentState') {
       switch (value) {
-        case 'invalidInput':
-          renderInputForm('invalid'); // рисует красную рамку
-          renderMessage(state.inputForm.error, 'failure'); // отображает ошибку
-          break;
         case 'sending':
           toggleFormReadonlyState('readonly');
           break;
-        /* ниже случаи 'invalidRss' и 'failedRequest' объединены вместе,
-        поскольку оба очень похожи по функционалу: в обоих случаях сайт отправляет запрос,
-        и не получает тот ответ, на который рассчитывал */
-        case 'invalidRss':
-        case 'failedRequest':
+        case 'fail':
           toggleFormReadonlyState('default');
-          renderMessage(state.message, 'failure'); // отображает ошибку
+          renderError(state.error);
           break;
         case 'success':
           toggleFormReadonlyState('default');
-          renderMessage(state.message, 'success'); // отображает сообщение об успехе
+          renderMessage();
           break;
         default:
           throw new Error(`Unexpected currentState: ${value}`);
       }
     }
-    if (path === 'inputForm.error') {
-      renderInputForm('invalid'); // рисует красную рамку
-      renderMessage(state.inputForm.error, 'failure'); // отображает ошибку
+    /* следующую проверку я убрать не могу, т.к. это единственный способ отреагировать на
+    ситуацию, при которой пользователь, например, сначала ввёл в форму неправильный url,
+    а после этого ввёл правильный url, но который уже был загружен. В этой ситуации
+    состояние формы не меняется (в обоих случаях state.inputForm.isValid === 'false'),
+    поэтому единственный способ заставить вотчер отреагировать и вывести новую ошибку - повесить
+    проверку на изменение содержимого ошибки (uiState.inputForm.error) */
+    if (path === 'uiState.inputForm.error') {
+      renderInputForm('invalid');
+      renderError(state.uiState.inputForm.error);
     }
     if (path === 'feeds') {
       renderFeeds(state.feeds);
       renderPosts(posts);
-      addPostsClickHandlers(watchedState);
     }
     if (path.startsWith('uiState.posts')) {
       const idsOfOpenedPosts = state.uiState.posts
@@ -200,13 +159,13 @@ export default (pageElements) => {
         .map((post) => post.id);
       renderViewedPosts(idsOfOpenedPosts);
     }
+    // следующая проверка нужна для прокидывания id поста в renderModal
     if (path === 'uiState.currentPreviewPostId') {
       const [currentPreviewPost] = state.feeds
         .flatMap((feed) => feed.items
           .filter((item) => item.id === value));
-      renderPreviewWindow(currentPreviewPost);
+      renderModal(currentPreviewPost);
     }
   });
-
   return watchedState;
 };
