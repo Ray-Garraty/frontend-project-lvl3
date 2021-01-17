@@ -1,3 +1,4 @@
+/* eslint-disable no-shadow */
 /* eslint-disable no-param-reassign */
 import _ from 'lodash';
 import axios from 'axios';
@@ -14,6 +15,10 @@ export default () => {
   const feedsContainerElement = document.querySelector('div.feeds');
   const addButtonElement = document.querySelector('button[type="submit"]');
   const postsContainerElement = document.querySelector('div.posts');
+  const modalTitleElement = document.querySelector('h5.modal-title');
+  const modalBodyElement = document.querySelector('div.modal-body');
+  const modalAElement = document.querySelector('div.modal-footer > a.full-article');
+  const inputForm = document.querySelector('input');
 
   const pageElements = {
     inputFieldElement,
@@ -21,6 +26,9 @@ export default () => {
     feedsContainerElement,
     addButtonElement,
     postsContainerElement,
+    modalTitleElement,
+    modalBodyElement,
+    modalAElement,
   };
 
   const initialState = {
@@ -33,25 +41,67 @@ export default () => {
         content: '',
         error: '',
       },
-      posts: {},
+      posts: [],
     },
   };
   const state = generateState(initialState, pageElements);
   const schema = yup.string().url();
 
-  const proxies = {
-    allorigins: 'https://api.allorigins.win/get?url=',
-    heroku: 'https://cors-anywhere.herokuapp.com/',
-    htmldriven: 'https://cors-proxy.htmldriven.com/?url=',
-    thingproxy: 'https://thingproxy.freeboard.io/fetch/',
-    whateverorigin: 'http://www.whateverorigin.org/get?url=',
-    alloworigin: 'http://alloworigin.com/get?url=',
-    yacdn: 'https://yacdn.org/serve/',
+  const proxy = 'allorigins';
+  // eslint-disable-next-line no-unused-vars
+  const addNewFeed = (feed, state, newItems) => {
+    state.currentState = 'success';
+    feed.url = state.uiState.inputForm.content;
+    state.uiState.inputForm.content = '';
+    feed.id = _.uniqueId();
+    state.feeds = [feed, ...state.feeds];
   };
-  const currentProxy = proxies.allorigins;
-  const retrieveFeed = (url, proxy) => axios.get(`${proxy}${encodeURIComponent(url)}`);
+  const updateExistingFeed = (feed, state, newItems) => {
+    feed.items = _.flatten([newItems, feed.items]);
+  };
+  const handleAddError = (state) => {
+    state.error = 'rss_invalid';
+    state.currentState = 'fail';
+  };
+  const handleUpdateError = (state) => {
+    state.error = 'network_error';
+    state.currentState = 'fail';
+  };
 
-  const inputForm = document.querySelector('input');
+  const retrieveFeed = (url, feed, state, proxyName, onResolve, onReject) => {
+    const proxies = {
+      allorigins: 'https://api.allorigins.win/get?url=',
+      heroku: 'https://cors-anywhere.herokuapp.com/',
+      htmldriven: 'https://cors-proxy.htmldriven.com/?url=',
+      thingproxy: 'https://thingproxy.freeboard.io/fetch/',
+      whateverorigin: 'http://www.whateverorigin.org/get?url=',
+      alloworigin: 'http://alloworigin.com/get?url=',
+      yacdn: 'https://yacdn.org/serve/',
+    };
+    const currentProxy = proxies[proxyName];
+    axios
+      .get(`${currentProxy}${encodeURIComponent(url)}`)
+      .then((response) => {
+        try {
+          const newData = parseRssFeed(response.data.contents);
+          const newItems = _.differenceWith(newData.items, feed.items, _.isEqual);
+          newItems.forEach((item) => {
+            const id = _.uniqueId();
+            item.id = id;
+            const post = { id, wasOpened: false };
+            state.uiState.posts = [post, ...state.uiState.posts];
+          });
+          onResolve(newData, state, newItems);
+        } catch (error) {
+          console.error('Here!', error);
+          onReject(state);
+        }
+      })
+      .catch(() => {
+        state.error = 'network_error';
+        state.currentState = 'fail';
+      });
+  };
 
   const handleAddClick = (e) => {
     e.preventDefault();
@@ -63,36 +113,9 @@ export default () => {
     try {
       validateString(state.uiState.inputForm.content, feedsUrls, schema);
       state.currentState = 'sending';
-      retrieveFeed(state.uiState.inputForm.content, currentProxy)
-        .then((response) => {
-          try {
-            const feed = parseRssFeed(response.data.contents);
-            state.currentState = 'success';
-            feed.url = state.uiState.inputForm.content;
-            state.uiState.inputForm.content = '';
-            feed.id = _.uniqueId();
-            state.uiState.posts = _.flatten([
-              state.uiState.posts,
-              ...feed.items.map((item) => {
-                const id = _.uniqueId();
-                item.id = id;
-                return { id, wasOpened: false };
-              }),
-            ]);
-            state.feeds = [feed, ...state.feeds];
-          } catch (error) {
-            console.error(error);
-            state.error = 'rss_invalid';
-            state.currentState = 'fail';
-          }
-        })
-        .catch((error) => {
-          console.error(error);
-          state.error = 'network_error';
-          state.currentState = 'fail';
-        });
+      retrieveFeed(state.uiState.inputForm.content, [], state, proxy, addNewFeed, handleAddError);
     } catch (error) {
-      console.error(error);
+      console.error('There!', error);
       state.uiState.inputForm.isValid = false;
       state.uiState.inputForm.error = error.type;
     }
@@ -103,7 +126,6 @@ export default () => {
     const tag = e.target.tagName;
     if (tag === 'A' || tag === 'BUTTON') {
       const { id } = e.target.dataset;
-      console.log(state.uiState.posts);
       const uiStateOfCurrentLink = _.find(state.uiState.posts, { id });
       uiStateOfCurrentLink.wasOpened = true;
       /* далее отдельное состояние 'uiState.currentPreviewPostId' обязательно
@@ -115,30 +137,18 @@ export default () => {
   };
   postsContainerElement.onclick = handlePostClick;
 
-  const updateRssFeedsContinuously = (watchedstate, timeout) => {
-    if (!_.isEmpty(watchedstate.feeds)) {
-      // eslint-disable-next-line array-callback-return
-      const promises = watchedstate.feeds.map((currentFeed) => {
-        retrieveFeed(currentFeed.url, currentProxy)
-          .then((response) => {
-            const feed = parseRssFeed(response.data.contents);
-            currentFeed.items = _.uniqWith([...feed.items, ...currentFeed.items], _.isEqual);
-            const newItems = currentFeed.items.filter((item) => !item.id);
-            newItems.forEach((item) => {
-              const id = _.uniqueId();
-              item.id = id;
-              const post = { id, wasOpened: false };
-              state.uiState.posts = { post, ...state.uiState.posts };
-            });
-          })
-          .catch(() => {
-            watchedstate.message = 'network_error';
-            watchedstate.currentState = 'failedRequest';
-          });
-      });
-      Promise.all(promises)
-        .then(setTimeout(() => updateRssFeedsContinuously(watchedstate, timeout), timeout));
-    }
+  const updateRssFeedsContinuously = (state, timeout) => {
+    // eslint-disable-next-line array-callback-return
+    const promises = state.feeds.map((currentFeed) => retrieveFeed(
+      currentFeed.url,
+      currentFeed,
+      state,
+      proxy,
+      updateExistingFeed,
+      handleUpdateError,
+    ));
+    Promise.all(promises)
+      .then(setTimeout(() => updateRssFeedsContinuously(state, timeout), timeout));
   };
-  // setTimeout(() => updateRssFeedsContinuously(state, updateInterval), updateInterval);
+  setTimeout(() => updateRssFeedsContinuously(state, updateInterval), updateInterval);
 };
