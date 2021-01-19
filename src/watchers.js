@@ -1,4 +1,3 @@
-/* eslint-disable no-param-reassign */
 import i18next from 'i18next';
 import onChange from 'on-change';
 
@@ -138,12 +137,6 @@ export default (state, pageElements) => {
           throw new Error(`Unexpected currentState: ${value}`);
       }
     }
-    /* следующую проверку я убрать не могу, т.к. это единственный способ отреагировать на
-    ситуацию, при которой пользователь, например, сначала ввёл в форму неправильный url,
-    а после этого ввёл правильный url, который уже был загружен ранее. В этой ситуации
-    состояние формы не меняется (в обоих случаях state.inputForm.isValid === 'false'),
-    поэтому единственный способ заставить вотчер отреагировать и вывести новую ошибку - повесить
-    проверку на изменение содержимого ошибки (uiState.inputForm.error) */
     if (path === 'uiState.inputForm.error') {
       renderInputForm('invalid', pageElements);
       renderError(state.uiState.inputForm.error, pageElements);
@@ -158,7 +151,6 @@ export default (state, pageElements) => {
         .map((post) => post.id);
       renderViewedPosts(idsOfOpenedPosts, pageElements);
     }
-    // следующая проверка нужна для прокидывания id поста в renderModal
     if (path === 'uiState.currentPreviewPostId') {
       const [currentPreviewPost] = state.feeds
         .flatMap((feed) => feed.items
