@@ -92,7 +92,7 @@ export default () => {
         })
         .catch(() => {
           state.error = 'network_error';
-          state.currentState = 'failedRequest';
+          state.currentState = 'fail';
         });
     } catch (error) {
       state.uiState.inputForm.isValid = false;
@@ -126,8 +126,8 @@ export default () => {
           currentFeed.items = _.flatten([newItems, currentFeed.items]);
         })
         .catch(() => {
-          state.message = 'network_error';
-          state.currentState = 'failedRequest';
+          state.error = 'network_error';
+          state.currentState = 'fail';
         });
     });
     Promise.all(promises)
