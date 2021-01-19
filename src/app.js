@@ -87,10 +87,11 @@ export default () => {
             state.feeds = [feed, ...state.feeds];
           } catch (error) {
             state.error = 'rss_invalid';
-            state.currentState = 'invalidRss';
+            state.currentState = 'fail';
           }
         })
-        .catch(() => {
+        .catch((error) => {
+          console.error(error);
           state.error = 'network_error';
           state.currentState = 'fail';
         });
