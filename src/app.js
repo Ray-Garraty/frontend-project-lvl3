@@ -1,64 +1,56 @@
+/* eslint-disable no-param-reassign */
 import _ from 'lodash';
 import axios from 'axios';
 import * as yup from 'yup';
 import parseRssFeed from './parser.js';
 import generateState from './watchers.js';
-import validateString from './validator.js';
+import validateUrl from './validator.js';
 
 const updateInterval = 5000;
+const schema = yup.string().url();
+const proxy = 'https://api.allorigins.win/get?url=';
+
+const inputFieldElement = document.querySelector('input');
+const feedbackFieldElement = document.querySelector('div.feedback');
+const feedsContainerElement = document.querySelector('div.feeds');
+const addButtonElement = document.querySelector('button[type="submit"]');
+const postsContainerElement = document.querySelector('div.posts');
+const modalTitleElement = document.querySelector('h5.modal-title');
+const modalBodyElement = document.querySelector('div.modal-body');
+const modalAElement = document.querySelector('div.modal-footer > a.full-article');
+const inputForm = document.querySelector('input');
+
+const pageElements = {
+  inputFieldElement,
+  feedbackFieldElement,
+  feedsContainerElement,
+  addButtonElement,
+  postsContainerElement,
+  modalTitleElement,
+  modalBodyElement,
+  modalAElement,
+};
+
+const initialState = {
+  currentState: 'idle',
+  error: '',
+  feeds: [],
+  uiState: {
+    inputForm: {
+      isValid: false,
+      content: '',
+      error: '',
+    },
+    posts: [],
+  },
+};
 
 export default () => {
-  const inputFieldElement = document.querySelector('input');
-  const feedbackFieldElement = document.querySelector('div.feedback');
-  const feedsContainerElement = document.querySelector('div.feeds');
-  const addButtonElement = document.querySelector('button[type="submit"]');
-  const postsContainerElement = document.querySelector('div.posts');
-  const modalTitleElement = document.querySelector('h5.modal-title');
-  const modalBodyElement = document.querySelector('div.modal-body');
-  const modalAElement = document.querySelector('div.modal-footer > a.full-article');
-  const inputForm = document.querySelector('input');
-
-  const pageElements = {
-    inputFieldElement,
-    feedbackFieldElement,
-    feedsContainerElement,
-    addButtonElement,
-    postsContainerElement,
-    modalTitleElement,
-    modalBodyElement,
-    modalAElement,
-  };
-
-  const initialState = {
-    currentState: 'idle',
-    error: '',
-    feeds: [],
-    uiState: {
-      inputForm: {
-        isValid: false,
-        content: '',
-        error: '',
-      },
-      posts: [],
-    },
-  };
   const state = generateState(initialState, pageElements);
-  const schema = yup.string().url();
 
-  const proxy = 'allorigins';
-
-  const retrieveFeed = (url, proxyName) => {
-    const proxies = {
-      allorigins: 'https://api.allorigins.win/get?url=',
-      heroku: 'https://cors-anywhere.herokuapp.com/',
-      htmldriven: 'https://cors-proxy.htmldriven.com/?url=',
-      thingproxy: 'https://thingproxy.freeboard.io/fetch/',
-      whateverorigin: 'http://www.whateverorigin.org/get?url=',
-      alloworigin: 'http://alloworigin.com/get?url=',
-      yacdn: 'https://yacdn.org/serve/',
-    };
-    const currentProxy = proxies[proxyName];
-    return axios.get(`${currentProxy}${encodeURIComponent(url)}`);
+  const createRequestUrl = (url, proxyString) => {
+    console.log(url);
+    return new URL(`${proxyString}${url.toString()}`);
   };
 
   const handleAddClick = (e) => {
@@ -66,18 +58,21 @@ export default () => {
     state.error = '';
     state.uiState.inputForm.error = '';
     state.uiState.inputForm.isValid = true;
-    state.uiState.inputForm.content = inputForm.value;
+    /* строка кода ниже нужна для извлечения url-ов из уже существующих фидов для
+    последующей передачи в функцию "validateUrl", это нужно для её корректной работы */
     const feedsUrls = state.feeds.flatMap((feed) => feed.url);
     try {
-      validateString(state.uiState.inputForm.content, feedsUrls, schema);
+      validateUrl(inputForm.value, feedsUrls, schema);
+      const userInputUrl = new URL(inputForm.value);
+      const requestUrl = createRequestUrl(userInputUrl, proxy);
       state.currentState = 'sending';
-      retrieveFeed(state.uiState.inputForm.content, proxy)
+      axios
+        .get(requestUrl)
         .then((response) => {
           try {
             const feed = parseRssFeed(response.data.contents);
             state.currentState = 'success';
-            feed.url = state.uiState.inputForm.content;
-            state.uiState.inputForm.content = '';
+            feed.url = userInputUrl;
             feed.id = _.uniqueId();
             state.uiState.posts = feed.items.map((item) => {
               const id = _.uniqueId();
@@ -96,6 +91,7 @@ export default () => {
           state.currentState = 'fail';
         });
     } catch (error) {
+      console.error(error);
       state.uiState.inputForm.isValid = false;
       state.uiState.inputForm.error = error.type;
     }
@@ -112,9 +108,12 @@ export default () => {
   };
   postsContainerElement.onclick = handlePostClick;
 
-  const updateRssFeedsContinuously = (state, timeout) => {
-    const promises = state.feeds.map((currentFeed) => {
-      retrieveFeed(currentFeed.url, proxy)
+  const updateRssFeedsContinuously = (watchedstate, timeout) => {
+    const promises = watchedstate.feeds.map((currentFeed) => {
+      console.log(currentFeed);
+      const requestUrl = createRequestUrl(currentFeed.url, proxy);
+      return axios
+        .get(requestUrl)
         .then((response) => {
           const feed = parseRssFeed(response.data.contents);
           const newItems = _.differenceWith(feed.items, currentFeed.items, _.isEqual);
@@ -122,17 +121,17 @@ export default () => {
             const id = _.uniqueId();
             item.id = id;
             const post = { id, wasOpened: false };
-            state.uiState.posts = [post, ...state.uiState.posts];
+            watchedstate.uiState.posts = [post, ...state.uiState.posts];
           });
           currentFeed.items = _.flatten([newItems, currentFeed.items]);
         })
         .catch(() => {
-          state.error = 'network_error';
-          state.currentState = 'fail';
+          watchedstate.error = 'network_error';
+          watchedstate.currentState = 'fail';
         });
     });
     Promise.all(promises)
-      .then(setTimeout(() => updateRssFeedsContinuously(state, timeout), timeout));
+      .then(setTimeout(() => updateRssFeedsContinuously(watchedstate, timeout), timeout));
   };
   setTimeout(() => updateRssFeedsContinuously(state, updateInterval), updateInterval);
 };
