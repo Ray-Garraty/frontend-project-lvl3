@@ -123,6 +123,7 @@ export default (state, pageElements) => {
     if (path === 'request.status') {
       switch (value) {
         case 'sending':
+          renderInputForm(true, pageElements);
           toggleFormReadonlyState('readonly', pageElements);
           break;
         case 'fail':

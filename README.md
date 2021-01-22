@@ -2,7 +2,7 @@
 ### (Simple RSS-reader with automatic updates)
 
 ### Project webpage:
-[frontend-project-lvl3-lyart.vercel.app](https://frontend-project-lvl3-lyart.vercel.app/)
+[https://frontend-project-lvl3.ray-garraty.vercel.app/](https://frontend-project-lvl3.ray-garraty.vercel.app/)
 
 The following stack was used for the project:
 

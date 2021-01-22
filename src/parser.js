@@ -14,12 +14,12 @@ export default (data) => {
   const items = Array.from(itemElements)
     .map((item) => {
       const titleElt = item.querySelector('title');
-      const title = titleElt.textContent;
+      const itemTitle = titleElt.textContent;
       const linkElt = item.querySelector('link');
       const link = linkElt.textContent;
       const descriptionElt = item.querySelector('description');
-      const description = descriptionElt.textContent;
-      return { title, link, description };
+      const itemDescription = descriptionElt.textContent;
+      return { itemTitle, link, itemDescription };
     });
   return { title, description, items };
 };
