@@ -51,11 +51,13 @@ export default () => {
   const state = generateState(initialState, pageElements);
 
   const createRequestUrl = (url, proxyString) => {
-    if (url.constructor.name === 'URL') {
-      console.log(url);
+    /* пришлось сделать такой костыль, т.к. если на вход поступает объект Proxy(URL),
+    то выскакивает ошибка о невозможности использования метода toString() */
+    try {
       return new URL(`${proxyString}${url.toString()}`);
+    } catch (error) {
+      return createRequestUrl(onChange.target(url), proxyString);
     }
-    return createRequestUrl(onChange.target(url), proxyString);
   };
 
   const handleAddClick = (e) => {
@@ -64,7 +66,7 @@ export default () => {
     state.uiState.inputForm.error = '';
     state.uiState.inputForm.isValid = true;
     /* строка кода ниже нужна для извлечения url-ов из уже существующих фидов для
-    последующей передачи в функцию "validateUrl", это нужно для её корректной работы */
+    последующей передачи в функцию "validateUrl", это требуется для её корректной работы */
     const feedsUrls = state.feeds.flatMap((feed) => onChange.target(feed).url.toString());
     try {
       validateUrl(inputForm.value, feedsUrls);
@@ -135,13 +137,10 @@ export default () => {
               item.id = id;
               return item;
             });
-          // console.log('Новые записи: ', newItems);
           const newPosts = newItems.flatMap((item) => {
             const { id } = item;
             return { id, wasOpened: false };
           });
-          // console.log('Старые посты: ', onChange.target(state.uiState.posts));
-          // console.log('Новые посты: ', newPosts);
           currentFeed.items = _.flatten([newItems, currentFeed.items]);
           state.uiState.posts = [...onChange.target(state.uiState.posts), ...newPosts];
         })
