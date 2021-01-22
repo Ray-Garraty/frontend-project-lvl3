@@ -1,13 +1,13 @@
 /* eslint-disable no-param-reassign */
 import _ from 'lodash';
 import axios from 'axios';
-import * as yup from 'yup';
+import onChange from 'on-change';
 import parseRssFeed from './parser.js';
 import generateState from './watchers.js';
-import validateUrl from './validator.js';
+import createValidator from './validator.js';
 
 const updateInterval = 5000;
-const schema = yup.string().url();
+const validateUrl = createValidator();
 const proxy = 'https://api.allorigins.win/get?url=';
 
 const inputFieldElement = document.querySelector('input');
@@ -32,68 +32,78 @@ const pageElements = {
 };
 
 const initialState = {
-  currentState: 'idle',
-  error: '',
-  feeds: [],
+  request: {
+    status: 'idle',
+    error: '',
+  },
   uiState: {
     inputForm: {
-      isValid: false,
+      isValid: true,
       content: '',
       error: '',
     },
     posts: [],
   },
+  feeds: [],
 };
 
 export default () => {
   const state = generateState(initialState, pageElements);
 
   const createRequestUrl = (url, proxyString) => {
-    console.log(url);
-    return new URL(`${proxyString}${url.toString()}`);
+    if (url.constructor.name === 'URL') {
+      console.log(url);
+      return new URL(`${proxyString}${url.toString()}`);
+    }
+    return createRequestUrl(onChange.target(url), proxyString);
   };
 
   const handleAddClick = (e) => {
     e.preventDefault();
-    state.error = '';
+    state.request.error = '';
     state.uiState.inputForm.error = '';
     state.uiState.inputForm.isValid = true;
     /* строка кода ниже нужна для извлечения url-ов из уже существующих фидов для
     последующей передачи в функцию "validateUrl", это нужно для её корректной работы */
-    const feedsUrls = state.feeds.flatMap((feed) => feed.url);
+    const feedsUrls = state.feeds.flatMap((feed) => onChange.target(feed).url.toString());
     try {
-      validateUrl(inputForm.value, feedsUrls, schema);
+      validateUrl(inputForm.value, feedsUrls);
       const userInputUrl = new URL(inputForm.value);
       const requestUrl = createRequestUrl(userInputUrl, proxy);
-      state.currentState = 'sending';
+      state.request.status = 'sending';
       axios
         .get(requestUrl)
         .then((response) => {
           try {
             const feed = parseRssFeed(response.data.contents);
-            state.currentState = 'success';
+            state.request.status = 'success';
             feed.url = userInputUrl;
             feed.id = _.uniqueId();
-            state.uiState.posts = feed.items.map((item) => {
+            feed.items = feed.items.flatMap((item) => {
               const id = _.uniqueId();
               item.id = id;
+              return item;
+            });
+            const posts = feed.items.flatMap((item) => {
+              const { id } = item;
               return { id, wasOpened: false };
             });
+            state.uiState.posts = [...onChange.target(state.uiState.posts), ...posts];
             state.feeds = [feed, ...state.feeds];
           } catch (error) {
-            state.error = 'rss_invalid';
-            state.currentState = 'fail';
+            console.error(error);
+            state.request.error = 'rss_invalid';
+            state.request.status = 'fail';
           }
         })
         .catch((error) => {
           console.error(error);
-          state.error = 'network_error';
-          state.currentState = 'fail';
+          state.request.error = 'network_error';
+          state.request.status = 'fail';
         });
     } catch (error) {
-      console.error(error);
-      state.uiState.inputForm.isValid = false;
       state.uiState.inputForm.error = error.type;
+      state.uiState.inputForm.isValid = false;
     }
   };
   addButtonElement.onclick = handleAddClick;
@@ -110,24 +120,34 @@ export default () => {
 
   const updateRssFeedsContinuously = (watchedstate, timeout) => {
     const promises = watchedstate.feeds.map((currentFeed) => {
-      console.log(currentFeed);
+      /* в строке кода ниже я вынужден использовать "onChange.target", т.к. по-другому извлечь url
+      из currentFeed не получилось, т.к. он завёрнут в объект Proxy, что вызывает ошибку */
       const requestUrl = createRequestUrl(currentFeed.url, proxy);
       return axios
         .get(requestUrl)
         .then((response) => {
           const feed = parseRssFeed(response.data.contents);
-          const newItems = _.differenceWith(feed.items, currentFeed.items, _.isEqual);
-          newItems.forEach((item) => {
-            const id = _.uniqueId();
-            item.id = id;
-            const post = { id, wasOpened: false };
-            watchedstate.uiState.posts = [post, ...state.uiState.posts];
+          const newItems = _.differenceWith(feed.items,
+            onChange.target(currentFeed).items,
+            (oldItem, newItem) => oldItem.title === newItem.title)
+            .map((item) => {
+              const id = _.uniqueId();
+              item.id = id;
+              return item;
+            });
+          // console.log('Новые записи: ', newItems);
+          const newPosts = newItems.flatMap((item) => {
+            const { id } = item;
+            return { id, wasOpened: false };
           });
+          // console.log('Старые посты: ', onChange.target(state.uiState.posts));
+          // console.log('Новые посты: ', newPosts);
           currentFeed.items = _.flatten([newItems, currentFeed.items]);
+          state.uiState.posts = [...onChange.target(state.uiState.posts), ...newPosts];
         })
         .catch(() => {
-          watchedstate.error = 'network_error';
-          watchedstate.currentState = 'fail';
+          watchedstate.request.error = 'network_error';
+          watchedstate.request.status = 'fail';
         });
     });
     Promise.all(promises)

@@ -120,25 +120,25 @@ const renderViewedPosts = (ids, pageElements) => {
 export default (state, pageElements) => {
   const watchedState = onChange(state, (path, value) => {
     const posts = state.feeds.flatMap((feed) => feed.items);
-    if (path === 'currentState') {
+    if (path === 'request.status') {
       switch (value) {
         case 'sending':
           toggleFormReadonlyState('readonly', pageElements);
           break;
         case 'fail':
           toggleFormReadonlyState('default', pageElements);
-          renderError(state.error, pageElements);
+          renderError(state.request.error, pageElements);
           break;
         case 'success':
           toggleFormReadonlyState('default', pageElements);
           renderMessage(pageElements);
           break;
         default:
-          throw new Error(`Unexpected currentState: ${value}`);
+          throw new Error(`Unexpected request status: ${value}`);
       }
     }
-    if (path === 'uiState.inputForm.error') {
-      renderInputForm('invalid', pageElements);
+    if (path === 'uiState.inputForm.isValid') {
+      renderInputForm(false, pageElements);
       renderError(state.uiState.inputForm.error, pageElements);
     }
     if (path === 'feeds') {
