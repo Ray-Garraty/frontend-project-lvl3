@@ -80,7 +80,7 @@ const renderPosts = (posts, pageElements) => {
     item.classList.add('list-group-item', 'd-flex', 'justify-content-between', 'align-items-start');
     postsListElement.appendChild(item);
     const link = document.createElement('a');
-    link.className = post.wasOpened ? 'font-weight-normal' : 'font-weight-bold';
+    link.className = 'font-weight-bold';
     link.setAttribute('href', post.link);
     link.dataset.id = post.id;
     link.setAttribute('target', '_blank');
@@ -120,6 +120,9 @@ const renderViewedPosts = (ids, pageElements) => {
 export default (state, pageElements) => {
   const watchedState = onChange(state, (path, value) => {
     const posts = state.feeds.flatMap((feed) => feed.items);
+    const idsOfOpenedPosts = state.uiState.posts
+      .filter((post) => post.wasOpened)
+      .map((post) => post.id);
     if (path === 'request.status') {
       switch (value) {
         case 'sending':
@@ -145,11 +148,9 @@ export default (state, pageElements) => {
     if (path === 'feeds') {
       renderFeeds(state.feeds, pageElements);
       renderPosts(posts, pageElements);
+      renderViewedPosts(idsOfOpenedPosts, pageElements);
     }
     if (path.endsWith('wasOpened')) {
-      const idsOfOpenedPosts = state.uiState.posts
-        .filter((post) => post.wasOpened)
-        .map((post) => post.id);
       renderViewedPosts(idsOfOpenedPosts, pageElements);
     }
     if (path === 'uiState.currentPreviewPostId') {

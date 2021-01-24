@@ -8,7 +8,7 @@ The following stack was used for the project:
 
 * Frontend module bundler (Webpack)
 * CSS Library (Bootstrap)
-* Asyncronous operations (Promises)
+* Asynchronous operations (Promises)
 * Browser Events, DOM-model
 * Validation (yup), XML-parsing (DOMParser) 
 * Deploy (https://vercel.com/)

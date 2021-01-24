@@ -19,7 +19,7 @@ export default (data) => {
       const link = linkElt.textContent;
       const descriptionElt = item.querySelector('description');
       const itemDescription = descriptionElt.textContent;
-      return { itemTitle, link, itemDescription };
+      return { title: itemTitle, link, description: itemDescription };
     });
   return { title, description, items };
 };
