@@ -3,58 +3,61 @@ import _ from 'lodash';
 import axios from 'axios';
 import parseRssFeed from './parser.js';
 import generateState from './watchers.js';
+import createValidator from './validator.js';
 
 const updateInterval = 5000;
-const proxyUrl = new URL('https://api.allorigins.win/get');
+const proxyUrlString = 'https://api.allorigins.win/get';
 
-const inputFieldElement = document.querySelector('input');
-const feedbackFieldElement = document.querySelector('div.feedback');
-const feedsContainerElement = document.querySelector('div.feeds');
-const addButtonElement = document.querySelector('button[type="submit"]');
-const postsContainerElement = document.querySelector('div.posts');
-const modalTitleElement = document.querySelector('h5.modal-title');
-const modalBodyElement = document.querySelector('div.modal-body');
-const modalAElement = document.querySelector('div.modal-footer > a.full-article');
-const inputForm = document.querySelector('input');
-
-const pageElements = {
-  inputFieldElement,
-  feedbackFieldElement,
-  feedsContainerElement,
-  addButtonElement,
-  postsContainerElement,
-  modalTitleElement,
-  modalBodyElement,
-  modalAElement,
-};
-
-const initialState = {
-  request: {
-    status: 'idle',
-    error: '',
-  },
-  uiState: {
-    inputForm: {
-      isValid: true,
-      content: '',
-      error: '',
-    },
-    posts: [],
-  },
-  feeds: [],
-};
-
-export default (validateUrl) => {
-  const state = generateState(initialState, pageElements);
-
+export default () => {
+  const validateUrl = createValidator();
   const createRequestUrl = (targetUrl) => {
+    const proxyUrl = new URL(proxyUrlString);
     proxyUrl.searchParams.set('url', targetUrl);
     return proxyUrl.toString();
   };
 
+  const inputFieldElement = document.querySelector('input');
+  const feedbackFieldElement = document.querySelector('div.feedback');
+  const feedsContainerElement = document.querySelector('div.feeds');
+  const addButtonElement = document.querySelector('button[type="submit"]');
+  const postsContainerElement = document.querySelector('div.posts');
+  const modalTitleElement = document.querySelector('h5.modal-title');
+  const modalBodyElement = document.querySelector('div.modal-body');
+  const modalAElement = document.querySelector('div.modal-footer > a.full-article');
+  const inputForm = document.querySelector('input');
+
+  const pageElements = {
+    inputFieldElement,
+    feedbackFieldElement,
+    feedsContainerElement,
+    addButtonElement,
+    postsContainerElement,
+    modalTitleElement,
+    modalBodyElement,
+    modalAElement,
+  };
+
+  const initialState = {
+    requestState: {
+      status: 'idle',
+      error: '',
+    },
+    uiState: {
+      inputForm: {
+        isValid: true,
+        content: '',
+        error: '',
+      },
+      posts: [],
+    },
+    feeds: [],
+  };
+
+  const state = generateState(initialState, pageElements);
+
   const handleAddClick = (e) => {
     e.preventDefault();
-    state.request.error = '';
+    state.requestState.error = '';
     state.uiState.inputForm.error = '';
     state.uiState.inputForm.isValid = true;
     const feedsUrls = state.feeds.flatMap((feed) => feed.url);
@@ -62,7 +65,7 @@ export default (validateUrl) => {
       validateUrl(inputForm.value, feedsUrls);
       const targetUrl = inputForm.value;
       const requestUrl = createRequestUrl(targetUrl);
-      state.request.status = 'sending';
+      state.requestState.status = 'sending';
       axios
         .get(requestUrl)
         .then((response) => {
@@ -81,17 +84,17 @@ export default (validateUrl) => {
             });
             state.uiState.posts = [...state.uiState.posts, ...posts];
             state.feeds = [feed, ...state.feeds];
-            state.request.status = 'success';
+            state.requestState.status = 'success';
           } catch (error) {
             console.error(error);
-            state.request.error = 'rss_invalid';
-            state.request.status = 'fail';
+            state.requestState.error = 'rss_invalid';
+            state.requestState.status = 'fail';
           }
         })
         .catch((error) => {
           console.error(error);
-          state.request.error = 'network_error';
-          state.request.status = 'fail';
+          state.requestState.error = 'network_error';
+          state.requestState.status = 'fail';
         });
     } catch (error) {
       state.uiState.inputForm.error = error.type;
@@ -133,8 +136,8 @@ export default (validateUrl) => {
           state.uiState.posts = [...state.uiState.posts, ...newPosts];
         })
         .catch(() => {
-          watchedstate.request.error = 'network_error';
-          watchedstate.request.status = 'fail';
+          watchedstate.requestState.error = 'network_error';
+          watchedstate.requestState.status = 'fail';
         });
     });
     Promise.all(promises)

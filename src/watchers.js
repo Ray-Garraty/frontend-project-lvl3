@@ -123,7 +123,7 @@ export default (state, pageElements) => {
     const idsOfOpenedPosts = state.uiState.posts
       .filter((post) => post.wasOpened)
       .map((post) => post.id);
-    if (path === 'request.status') {
+    if (path === 'requestState.status') {
       switch (value) {
         case 'sending':
           renderInputForm(true, pageElements);
@@ -131,14 +131,14 @@ export default (state, pageElements) => {
           break;
         case 'fail':
           toggleFormReadonlyState('default', pageElements);
-          renderError(state.request.error, pageElements);
+          renderError(state.requestState.error, pageElements);
           break;
         case 'success':
           toggleFormReadonlyState('default', pageElements);
           renderMessage(pageElements);
           break;
         default:
-          throw new Error(`Unexpected request status: ${value}`);
+          throw new Error(`Unexpected requestState status: ${value}`);
       }
     }
     if (path === 'uiState.inputForm.isValid') {
