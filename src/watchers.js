@@ -58,25 +58,21 @@ const renderFeeds = (feeds, pageElements) => {
   });
 };
 
-const renderPosts = (posts, pageElements) => {
+const renderPosts = (posts, viewedPostsIds, pageElements) => {
   const { postsContainerElement } = pageElements;
-  let [postsListElement] = postsContainerElement.getElementsByTagName('ul');
-  if (postsListElement) {
-    postsListElement.innerHTML = '';
-  } else {
-    const postsHeader = document.createElement('h2');
-    postsHeader.textContent = i18next.t('posts_header');
-    postsContainerElement.appendChild(postsHeader);
-    postsListElement = document.createElement('ul');
-    postsListElement.classList.add('list-group');
-    postsContainerElement.appendChild(postsListElement);
-  }
+  postsContainerElement.innerHTML = '';
+  const postsHeader = document.createElement('h2');
+  postsHeader.textContent = i18next.t('posts_header');
+  postsContainerElement.appendChild(postsHeader);
+  const postsListElement = document.createElement('ul');
+  postsListElement.classList.add('list-group');
+  postsContainerElement.appendChild(postsListElement);
   posts.forEach((post) => {
     const item = document.createElement('li');
     item.classList.add('list-group-item', 'd-flex', 'justify-content-between', 'align-items-start');
     postsListElement.appendChild(item);
     const link = document.createElement('a');
-    link.className = 'font-weight-bold';
+    link.className = viewedPostsIds.includes(post.id) ? 'font-weight-normal' : 'font-weight-bold';
     link.setAttribute('href', post.link);
     link.dataset.id = post.id;
     link.setAttribute('target', '_blank');
@@ -102,7 +98,7 @@ const renderModal = (post, pageElements) => {
   modalAElement.setAttribute('href', post.link);
 };
 
-const renderViewedPosts = (ids, pageElements) => {
+/* const renderViewedPosts = (ids, pageElements) => {
   const { postsContainerElement } = pageElements;
   const aElements = Array.from(postsContainerElement.getElementsByTagName('a'));
   aElements.forEach((element) => {
@@ -111,7 +107,7 @@ const renderViewedPosts = (ids, pageElements) => {
       element.classList.add('font-weight-normal');
     }
   });
-};
+}; */
 
 export default (state, pageElements) => {
   const watchedState = onChange(state, (path, value) => {
@@ -143,11 +139,10 @@ export default (state, pageElements) => {
     }
     if (path === 'feeds') {
       renderFeeds(state.feeds, pageElements);
-      renderPosts(posts, pageElements);
-      renderViewedPosts(idsOfOpenedPosts, pageElements);
+      renderPosts(posts, idsOfOpenedPosts, pageElements);
     }
     if (path.endsWith('wasOpened')) {
-      renderViewedPosts(idsOfOpenedPosts, pageElements);
+      renderPosts(posts, idsOfOpenedPosts, pageElements);
     }
     if (path === 'uiState.currentPreviewPostId') {
       const [currentPreviewPost] = state.feeds
