@@ -63,16 +63,17 @@ export default () => {
     state.uiState.inputForm.isValid = true;
     const feedsUrls = state.feeds.flatMap((feed) => feed.url);
     try {
-      const targetUrl = new FormData(e.target);
-      validateUrl(targetUrl.get('url'), feedsUrls);
-      const requestUrl = createRequestUrl(targetUrl.get('url'));
+      const formData = new FormData(e.target);
+      const targetUrl = formData.get('url');
+      validateUrl(targetUrl, feedsUrls);
+      const requestUrl = createRequestUrl(targetUrl);
       state.requestState.status = 'sending';
       axios
         .get(requestUrl)
         .then((response) => {
           try {
             const feed = parseRssFeed(response.data.contents);
-            feed.url = targetUrl.get('url');
+            feed.url = targetUrl;
             feed.id = _.uniqueId();
             feed.items = feed.items.flatMap((item) => {
               const id = _.uniqueId();
