@@ -63,8 +63,8 @@ export default () => {
     state.uiState.inputForm.isValid = true;
     const feedsUrls = state.feeds.flatMap((feed) => feed.url);
     try {
-      validateUrl(inputForm.value, feedsUrls);
       const targetUrl = new FormData(e.target);
+      validateUrl(targetUrl.get('url'), feedsUrls);
       const requestUrl = createRequestUrl(targetUrl.get('url'));
       state.requestState.status = 'sending';
       axios
