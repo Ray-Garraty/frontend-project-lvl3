@@ -38,17 +38,13 @@ const renderError = (error, pageElements) => {
 
 const renderFeeds = (feeds, pageElements) => {
   const { feedsContainerElement } = pageElements;
-  let [feedsListElement] = feedsContainerElement.getElementsByTagName('ul');
-  if (feedsListElement) {
-    feedsListElement.innerHTML = '';
-  } else {
-    const feedsHeader = document.createElement('h2');
-    feedsHeader.textContent = i18next.t('feeds_header');
-    feedsContainerElement.appendChild(feedsHeader);
-    feedsListElement = document.createElement('ul');
-    feedsListElement.classList.add('list-group', 'mb-5');
-    feedsContainerElement.appendChild(feedsListElement);
-  }
+  feedsContainerElement.innerHTML = '';
+  const feedsHeader = document.createElement('h2');
+  feedsHeader.textContent = i18next.t('feeds_header');
+  feedsContainerElement.appendChild(feedsHeader);
+  const feedsListElement = document.createElement('ul');
+  feedsListElement.classList.add('list-group', 'mb-5');
+  feedsContainerElement.appendChild(feedsListElement);
   feeds.forEach((feed) => {
     const item = document.createElement('li');
     item.classList.add('list-group-item');

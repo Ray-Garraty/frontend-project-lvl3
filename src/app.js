@@ -25,7 +25,6 @@ export default () => {
   const modalTitleElement = document.querySelector('h5.modal-title');
   const modalBodyElement = document.querySelector('div.modal-body');
   const modalAElement = document.querySelector('div.modal-footer > a.full-article');
-  const inputForm = document.querySelector('input');
 
   const pageElements = {
     inputFieldElement,
