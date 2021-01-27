@@ -98,17 +98,6 @@ const renderModal = (post, pageElements) => {
   modalAElement.setAttribute('href', post.link);
 };
 
-/* const renderViewedPosts = (ids, pageElements) => {
-  const { postsContainerElement } = pageElements;
-  const aElements = Array.from(postsContainerElement.getElementsByTagName('a'));
-  aElements.forEach((element) => {
-    if (ids.includes(element.dataset.id)) {
-      element.classList.remove('font-weight-bold');
-      element.classList.add('font-weight-normal');
-    }
-  });
-}; */
-
 export default (state, pageElements) => {
   const watchedState = onChange(state, (path, value) => {
     const posts = state.feeds.flatMap((feed) => feed.items);

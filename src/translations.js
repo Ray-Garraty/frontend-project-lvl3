@@ -8,7 +8,7 @@ const en = {
     network_error: 'Network Error',
     feeds_header: 'Feeds',
     posts_header: 'Posts',
-    preview: 'Preview',
+    preview: 'preview',
   },
 };
 
