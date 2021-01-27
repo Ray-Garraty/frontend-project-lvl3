@@ -82,6 +82,7 @@ const renderPosts = (posts, viewedPostsIds, pageElements) => {
     const button = document.createElement('button');
     button.classList.add('btn', 'btn-primary', 'btn-sm');
     button.setAttribute('type', 'button');
+    button.setAttribute('name', 'preview');
     button.dataset.id = post.id;
     button.dataset.toggle = 'modal';
     button.dataset.target = '#modal';
