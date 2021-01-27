@@ -16,6 +16,7 @@ export default () => {
     return proxyUrl.toString();
   };
 
+  const formElement = document.querySelector('form');
   const inputFieldElement = document.querySelector('input');
   const feedbackFieldElement = document.querySelector('div.feedback');
   const feedsContainerElement = document.querySelector('div.feeds');
@@ -55,7 +56,7 @@ export default () => {
 
   const state = generateState(initialState, pageElements);
 
-  const handleAddClick = (e) => {
+  const handleSubmit = (e) => {
     e.preventDefault();
     state.requestState.error = '';
     state.uiState.inputForm.error = '';
@@ -63,15 +64,15 @@ export default () => {
     const feedsUrls = state.feeds.flatMap((feed) => feed.url);
     try {
       validateUrl(inputForm.value, feedsUrls);
-      const targetUrl = inputForm.value;
-      const requestUrl = createRequestUrl(targetUrl);
+      const targetUrl = new FormData(e.target);
+      const requestUrl = createRequestUrl(targetUrl.get('url'));
       state.requestState.status = 'sending';
       axios
         .get(requestUrl)
         .then((response) => {
           try {
             const feed = parseRssFeed(response.data.contents);
-            feed.url = targetUrl;
+            feed.url = targetUrl.get('url');
             feed.id = _.uniqueId();
             feed.items = feed.items.flatMap((item) => {
               const id = _.uniqueId();
@@ -101,7 +102,7 @@ export default () => {
       state.uiState.inputForm.isValid = false;
     }
   };
-  addButtonElement.onclick = handleAddClick;
+  formElement.onsubmit = handleSubmit;
 
   const handlePostClick = (e) => {
     if (e.target.hasAttribute('data-id')) {
