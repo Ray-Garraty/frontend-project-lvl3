@@ -38,17 +38,19 @@ export default () => {
   };
 
   const initialState = {
+    inputForm: {
+      isValid: true,
+      content: '',
+      error: null,
+    },
     requestState: {
       status: 'idle',
-      error: '',
+      error: null,
     },
     uiState: {
-      inputForm: {
-        isValid: true,
-        content: '',
-        error: '',
-      },
-      posts: [],
+      /* здесь хранятся не сами посты, а только статус ссылок (элементов 'a') постов
+      (был или не был открыт, wasOpened: true/false), а также id постов, ничего лишнего */
+      postsElementsState: [],
     },
     feeds: [],
   };
@@ -57,14 +59,14 @@ export default () => {
 
   const handleSubmit = (e) => {
     e.preventDefault();
-    state.requestState.error = '';
-    state.uiState.inputForm.error = '';
-    state.uiState.inputForm.isValid = true;
+    state.requestState.error = null;
+    state.inputForm.error = null;
+    state.inputForm.isValid = true;
     const feedsUrls = state.feeds.flatMap((feed) => feed.url);
-    try {
-      const formData = new FormData(e.target);
-      const targetUrl = formData.get('url');
-      validateUrl(targetUrl, feedsUrls);
+    const formData = new FormData(e.target);
+    const targetUrl = formData.get('url');
+    const validationError = validateUrl(targetUrl, feedsUrls);
+    if (!validationError) {
       const requestUrl = createRequestUrl(targetUrl);
       state.requestState.status = 'sending';
       axios
@@ -76,14 +78,16 @@ export default () => {
             feed.id = _.uniqueId();
             feed.items = feed.items.flatMap((item) => {
               const id = _.uniqueId();
-              item.id = id;
-              return item;
+              return { ...item, id };
             });
-            const posts = feed.items.flatMap((item) => {
+            const newPostsElementsState = feed.items.flatMap((item) => {
               const { id } = item;
               return { id, wasOpened: false };
             });
-            state.uiState.posts = [...state.uiState.posts, ...posts];
+            state.uiState.postsElementsState = [
+              ...state.uiState.postsElementsState,
+              ...newPostsElementsState,
+            ];
             state.feeds = [feed, ...state.feeds];
             state.requestState.status = 'success';
           } catch (error) {
@@ -97,9 +101,9 @@ export default () => {
           state.requestState.error = 'network_error';
           state.requestState.status = 'fail';
         });
-    } catch (error) {
-      state.uiState.inputForm.error = error.type;
-      state.uiState.inputForm.isValid = false;
+    } else {
+      state.inputForm.error = validationError.type;
+      state.inputForm.isValid = false;
     }
   };
   formElement.onsubmit = handleSubmit;
@@ -107,7 +111,7 @@ export default () => {
   const handlePostClick = (e) => {
     if (e.target.hasAttribute('data-id')) {
       const { id } = e.target.dataset;
-      const uiStateOfCurrentLink = _.find(state.uiState.posts, { id });
+      const uiStateOfCurrentLink = _.find(state.uiState.postsElementsState, { id });
       uiStateOfCurrentLink.wasOpened = true;
       state.uiState.currentPreviewPostId = id;
     }
@@ -126,20 +130,19 @@ export default () => {
             (oldItem, newItem) => oldItem.title === newItem.title)
             .map((item) => {
               const id = _.uniqueId();
-              item.id = id;
-              return item;
+              return { ...item, id };
             });
-          const newPosts = newItems.flatMap((item) => {
+          const newPostsElementsState = newItems.flatMap((item) => {
             const { id } = item;
             return { id, wasOpened: false };
           });
           currentFeed.items = _.flatten([newItems, currentFeed.items]);
-          state.uiState.posts = [...state.uiState.posts, ...newPosts];
+          state.uiState.postsElementsState = [
+            ...state.uiState.postsElementsState,
+            ...newPostsElementsState,
+          ];
         })
-        .catch(() => {
-          watchedstate.requestState.error = 'network_error';
-          watchedstate.requestState.status = 'fail';
-        });
+        .catch(() => {});
     });
     Promise.all(promises)
       .then(setTimeout(() => updateRssFeedsContinuously(watchedstate, timeout), timeout));

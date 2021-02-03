@@ -3,7 +3,7 @@ export default (data) => {
   const parsedData = parser.parseFromString(data, 'application/xml');
   const error = parsedData.querySelector('parsererror');
   if (error) {
-    throw new Error(error);
+    throw new Error('Invalid RSS');
   }
   const channelElement = parsedData.querySelector('channel');
   const titleElement = channelElement.querySelector('title');

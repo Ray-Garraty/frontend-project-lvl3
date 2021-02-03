@@ -102,7 +102,7 @@ const renderModal = (post, pageElements) => {
 export default (state, pageElements) => {
   const watchedState = onChange(state, (path, value) => {
     const posts = state.feeds.flatMap((feed) => feed.items);
-    const idsOfOpenedPosts = state.uiState.posts
+    const idsOfOpenedPosts = state.uiState.postsElementsState
       .filter((post) => post.wasOpened)
       .map((post) => post.id);
     if (path === 'requestState.status') {
@@ -123,9 +123,9 @@ export default (state, pageElements) => {
           throw new Error(`Unexpected requestState status: ${value}`);
       }
     }
-    if (path === 'uiState.inputForm.isValid') {
+    if (path === 'inputForm.isValid') {
       renderInputForm(false, pageElements);
-      renderError(state.uiState.inputForm.error, pageElements);
+      renderError(state.inputForm.error, pageElements);
     }
     if (path === 'feeds') {
       renderFeeds(state.feeds, pageElements);
@@ -135,9 +135,7 @@ export default (state, pageElements) => {
       renderPosts(posts, idsOfOpenedPosts, pageElements);
     }
     if (path === 'uiState.currentPreviewPostId') {
-      const [currentPreviewPost] = state.feeds
-        .flatMap((feed) => feed.items
-          .filter((item) => item.id === value));
+      const currentPreviewPost = posts.find((post) => post.id === value);
       renderModal(currentPreviewPost, pageElements);
     }
   });

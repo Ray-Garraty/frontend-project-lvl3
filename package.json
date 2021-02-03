@@ -4,7 +4,7 @@
   "description": "RSS aggregator",
   "main": "./src/init.js",
   "type": "module",
-  "engine": {
+  "engines": {
     "node": "14"
   },
   "scripts": {
@@ -24,7 +24,11 @@
     "webpack",
     "bootstrap"
   ],
-  "author": "Ray Garraty",
+  "author": {
+    "name" : "Ray Garraty",
+    "email" : "vl.besed@gmail.com",
+    "url" : "https://github.com/Ray-Garraty"
+  },
   "license": "ISC",
   "bugs": {
     "url": "https://github.com/Ray-Garraty/frontend-project-lvl3/issues"
@@ -39,6 +43,7 @@
     "eslint-config-airbnb-base": "^14.2.1",
     "eslint-plugin-import": "^2.22.1",
     "node-sass": "^5.0.0",
+    "npm-package-json-lint": "^5.1.0",
     "postcss-loader": "^4.1.0",
     "sass-loader": "^10.1.0",
     "style-loader": "^2.0.0",
