@@ -11,8 +11,7 @@ const renderInputForm = (isFormValid, pageElements) => {
 };
 
 const toggleFormReadonlyState = (formState, pageElements) => {
-  const { addButtonElement } = pageElements;
-  const { inputFieldElement } = pageElements;
+  const { addButtonElement, inputFieldElement } = pageElements;
   if (formState === 'readonly') {
     addButtonElement.disabled = true;
     inputFieldElement.setAttribute('readonly', true);

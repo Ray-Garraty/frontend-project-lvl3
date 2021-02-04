@@ -66,45 +66,45 @@ export default () => {
     const formData = new FormData(e.target);
     const targetUrl = formData.get('url');
     const validationError = validateUrl(targetUrl, feedsUrls);
-    if (!validationError) {
-      const requestUrl = createRequestUrl(targetUrl);
-      state.requestState.status = 'sending';
-      axios
-        .get(requestUrl)
-        .then((response) => {
-          try {
-            const feed = parseRssFeed(response.data.contents);
-            feed.url = targetUrl;
-            feed.id = _.uniqueId();
-            feed.items = feed.items.flatMap((item) => {
-              const id = _.uniqueId();
-              return { ...item, id };
-            });
-            const newPostsElementsState = feed.items.flatMap((item) => {
-              const { id } = item;
-              return { id, wasOpened: false };
-            });
-            state.uiState.postsElementsState = [
-              ...state.uiState.postsElementsState,
-              ...newPostsElementsState,
-            ];
-            state.feeds = [feed, ...state.feeds];
-            state.requestState.status = 'success';
-          } catch (error) {
-            console.error(error);
-            state.requestState.error = 'rss_invalid';
-            state.requestState.status = 'fail';
-          }
-        })
-        .catch((error) => {
-          console.error(error);
-          state.requestState.error = 'network_error';
-          state.requestState.status = 'fail';
-        });
-    } else {
+    if (validationError) {
       state.inputForm.error = validationError.type;
       state.inputForm.isValid = false;
+      return;
     }
+    const requestUrl = createRequestUrl(targetUrl);
+    state.requestState.status = 'sending';
+    axios
+      .get(requestUrl)
+      .then((response) => {
+        try {
+          const feed = parseRssFeed(response.data.contents);
+          feed.url = targetUrl;
+          feed.id = _.uniqueId();
+          feed.items = feed.items.flatMap((item) => {
+            const id = _.uniqueId();
+            return { ...item, id };
+          });
+          const newPostsElementsState = feed.items.flatMap((item) => {
+            const { id } = item;
+            return { id, wasOpened: false };
+          });
+          state.uiState.postsElementsState = [
+            ...state.uiState.postsElementsState,
+            ...newPostsElementsState,
+          ];
+          state.feeds = [feed, ...state.feeds];
+          state.requestState.status = 'success';
+        } catch (error) {
+          console.error(error);
+          state.requestState.error = 'rss_invalid';
+          state.requestState.status = 'fail';
+        }
+      })
+      .catch((error) => {
+        console.error(error);
+        state.requestState.error = 'network_error';
+        state.requestState.status = 'fail';
+      });
   };
   formElement.onsubmit = handleSubmit;
 
@@ -123,7 +123,10 @@ export default () => {
       const requestUrl = createRequestUrl(currentFeed.url);
       return axios
         .get(requestUrl)
-        .then((response) => {
+        .finally((response) => {
+          if (!response) {
+            return;
+          }
           const feed = parseRssFeed(response.data.contents);
           const newItems = _.differenceWith(feed.items,
             currentFeed.items,
@@ -141,8 +144,7 @@ export default () => {
             ...state.uiState.postsElementsState,
             ...newPostsElementsState,
           ];
-        })
-        .catch(() => {});
+        });
     });
     Promise.all(promises)
       .then(setTimeout(() => updateRssFeedsContinuously(watchedstate, timeout), timeout));
