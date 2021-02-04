@@ -63,7 +63,8 @@ export default () => {
     state.inputForm.error = null;
     state.inputForm.isValid = true;
     const feedsUrls = state.feeds.flatMap((feed) => feed.url);
-    const formData = new FormData(e.target);
+    const inputField = e.target;
+    const formData = new FormData(inputField);
     const targetUrl = formData.get('url');
     const validationError = validateUrl(targetUrl, feedsUrls);
     if (validationError) {
@@ -93,6 +94,7 @@ export default () => {
             ...newPostsElementsState,
           ];
           state.feeds = [feed, ...state.feeds];
+          inputField.reset();
           state.requestState.status = 'success';
         } catch (error) {
           console.error(error);
@@ -142,7 +144,7 @@ export default () => {
             ...newPostsElementsState,
           ];
         })
-        .catch(console.error);
+        .catch((error) => console.error(error.name));
     });
     Promise.all(promises)
       .finally(setTimeout(() => updateRssFeedsContinuously(watchedstate, timeout), timeout));
