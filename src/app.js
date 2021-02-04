@@ -123,7 +123,7 @@ export default () => {
       const requestUrl = createRequestUrl(currentFeed.url);
       return axios
         .get(requestUrl)
-        .finally((response) => {
+        .then((response) => {
           if (!response) {
             return;
           }
@@ -144,10 +144,11 @@ export default () => {
             ...state.uiState.postsElementsState,
             ...newPostsElementsState,
           ];
-        });
+        })
+        .catch(console.error);
     });
     Promise.all(promises)
-      .then(setTimeout(() => updateRssFeedsContinuously(watchedstate, timeout), timeout));
+      .finally(setTimeout(() => updateRssFeedsContinuously(watchedstate, timeout), timeout));
   };
   setTimeout(() => updateRssFeedsContinuously(state, updateInterval), updateInterval);
 };
