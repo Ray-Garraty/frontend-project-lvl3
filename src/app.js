@@ -124,9 +124,6 @@ export default () => {
       return axios
         .get(requestUrl)
         .then((response) => {
-          if (!response) {
-            return;
-          }
           const feed = parseRssFeed(response.data.contents);
           const newItems = _.differenceWith(feed.items,
             currentFeed.items,
